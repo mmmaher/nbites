@@ -15,6 +15,7 @@ from . import Leds
 from . import robots
 from . import GameController
 from . import FallController
+from . import PlayerFlip
 
 # Packages and modules from sub-directories
 from .headTracker import HeadTracker
@@ -84,15 +85,12 @@ class Brain(object):
         # Not FSAs
         self.gameController = GameController.GameController(self)
         self.kickDecider = KickDecider.KickDecider(self)
-
         self.player.claimedBall = False
+        self.play = Play.Play()
+        self.playerFlip = PlayerFlip.PlayerFlip(self)
 
         # Message interface
         self.interface = interface.interface
-
-        # HACK for dangerous ball flipping loc
-        self.noFlipFilter = []
-        self.flipFilter = []
 
     def initTeamMembers(self):
         self.teamMembers = []
@@ -150,7 +148,7 @@ class Brain(object):
         self.nav.run()
 
         # HACK for dangerous ball flipping loc
-        self.flipLocFilter()
+        self.playerFlip.run()
 
         # Set LED message
         self.leds.processLeds()
@@ -345,117 +343,3 @@ class Brain(object):
         self.resetLocTo(Constants.LANDMARK_OPP_FIELD_CROSS[0] - 1.0,
                         Constants.MIDFIELD_Y,
                         Constants.HEADING_RIGHT)
-
-    # THIS IS A HACK!
-    # ... but until we have a world contextor or some such, it's a necessary one.
-
-    def flipLocFilter(self):
-        """
-        Check where the goalie sees the ball and where we do.
-        Record if we're generally correct, or if our flipped location
-        is generally correct, or if neither one agrees with the goalie.
-        NOTE: ignore whenever the ball is in the middle 2x2 meter box.
-        """
-        # Get goalie data
-        for mate in self.teamMembers:
-            if mate.isDefaultGoalie() and mate.active:
-                if mate.ballOn and self.ball.vis.on:
-                    # calculate global ball coordinates
-                    # note: assume goalie is in center of goal.
-                    goalie_x = Constants.FIELD_WHITE_LEFT_SIDELINE_X
-                    goalie_y = Constants.MIDFIELD_Y
-
-                    ball_x = goalie_x + (mate.ballDist * math.cos(mate.ballBearing))
-                    ball_y = goalie_y + (mate.ballDist * math.sin(mate.ballBearing))
-                    goalie_ball_location = Location(ball_x, ball_y)
-
-                    # check against my data
-                    my_ball_location = Location(self.ball.x, self.ball.y)
-                    flipped_ball_location = Location(Constants.FIELD_GREEN_WIDTH - self.ball.x,
-                                                     Constants.FIELD_GREEN_HEIGHT - self.ball.y)
-
-                    if (mate.ballDist < 250 and
-                        self.loc.x > Constants.MIDFIELD_X and
-                        self.ball.x > Constants.MIDFIELD_X):
-                        # I'm probably flipped!
-                        self.updateFlipFilters(-1)
-
-                        print "Goalie saw the ball close, and I think I and it are far."
-                        print "Goalie sees ball at: " + str(goalie_ball_location)
-
-                        break
-
-                    if (goalie_ball_location.inCenterCenter() or
-                        my_ball_location.inCenterCenter()):
-                        # Ball is too close to the middle of the field. Risky.
-                        self.updateFlipFilters(0)
-                        break
-
-                    if my_ball_location.distTo(goalie_ball_location) < 70:
-                        # I'm probably in the right place!
-                        self.updateFlipFilters(1)
-                    elif flipped_ball_location.distTo(goalie_ball_location) < 70:
-                        # I'm probably flipped!
-                        self.updateFlipFilters(-1)
-                    else:
-                        # I don't agree with the goalie. Ignore.
-                        self.updateFlipFilters(0)
-
-        # If I've decided I should flip enough times, actually do it.
-        if (len(self.flipFilter) == 10 and
-            sum(self.flipFilter) > 6):
-            self.flipLoc()
-            # Reset filters! Don't want to flip again next frame.
-            self.noFlipFilter = []
-            self.flipFilter = []
-
-    def updateFlipFilters(self, value):
-        if value > 0:
-            # I think I shouldn't flip
-            self.noFlipFilter.append(1)
-            self.flipFilter.append(0)
-        elif value < 0:
-            # I think I should flip
-            self.noFlipFilter.append(0)
-            self.flipFilter.append(1)
-        else:
-            # Neither option agrees with the goalie.
-            self.noFlipFilter.append(0)
-            self.flipFilter.append(0)
-
-        # If filters are too long, pop oldest value.
-        if len(self.noFlipFilter) > 10:
-            self.noFlipFilter.pop(0)
-        if len(self.flipFilter) > 10:
-            self.flipFilter.pop(0)
-
-
-    def flipLoc(self):
-        """
-        The goalie sees a ball.
-        Check our current estimate of the ball against a flip.
-        If the flip is much better, flip our loc.
-        """
-
-        print "According to the Goalie, I need to flip my loc!"
-
-        print ("My position was (" + str(self.loc.x) + ", " + str(self.loc.y) + ", " + str(self.loc.h) +
-               ") and the ball's position was " + str(self.ball.x) + ", " + str(self.ball.y) + ")")
-
-        if (self.playerNumber == TeamMember.DEFAULT_GOALIE_NUMBER):
-            # I am a goalie. Reset to the penatly box.
-            print "I am a goalie. Resetting loc to the goalbox."
-            self.resetGoalieLocalization()
-            return
-
-        reset_x = (-1*(self.loc.x - Constants.MIDFIELD_X)) + Constants.MIDFIELD_X
-        reset_y = (-1*(self.loc.y - Constants.MIDFIELD_Y)) + Constants.MIDFIELD_Y
-        reset_h = self.loc.h + 180
-        if reset_h > 180:
-            reset_h -= 360
-        self.resetLocTo(reset_x, reset_y, reset_h)
-
-        self.ownBallFilter = []
-        self.ownBallFilterCount = 0
-        self.dangerousBallFilter = []
-        self.dangerousBallFilterCount = 0
