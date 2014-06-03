@@ -86,7 +86,6 @@ class Brain(object):
         self.gameController = GameController.GameController(self)
         self.kickDecider = KickDecider.KickDecider(self)
         self.player.claimedBall = False
-        self.play = Play.Play()
         self.playerFlip = PlayerFlip.PlayerFlip(self)
 
         # Message interface

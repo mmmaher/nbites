@@ -4,10 +4,10 @@ import time
 import noggin_constants as NogginConstants
 
 DEFAULT_GOALIE_NUMBER = 1
-DEFAULT_DEFENDER_NUMBER = 2
-DEFAULT_MIDDIE_NUMBER = 3
-DEFAULT_OFFENDER_NUMBER = 4
-DEFAULT_CHASER_NUMBER = 5
+DEFAULT_LEFT_DEFENDER_NUMBER = 2
+DEFAULT_RIGHT_DEFENDER_NUMBER = 3
+DEFAULT_CHASER_1_NUMBER = 4
+DEFAULT_CHASER_2_NUMBER = 5
 
 class TeamMember(RobotLocation):
     """class for keeping track of teammates' info """
@@ -96,19 +96,20 @@ class TeamMember(RobotLocation):
         return (self.brain.gameController.penalized)
 
     def isDefaultGoalie(self):
-        return (self.playerNumber == DEFAULT_GOALIE_NUMBER)
+        return (self.role == DEFAULT_GOALIE_NUMBER)
 
     def isDefaultChaser(self):
-        return (self.playerNumber == DEFAULT_CHASER_NUMBER)
-
-    def isDefaultOffender(self):
-        return (self.playerNumber == DEFAULT_OFFENDER_NUMBER)
+        return ((self.role == DEFAULT_CHASER_1_NUMBER) or
+                (self.role == DEFAULT_CHASER_2_NUMBER))
 
     def isDefaultDefender(self):
-        return (self.playerNumber == DEFAULT_DEFENDER_NUMBER)
+        return (self.isDefaultRightDefender or self.isDefaultLeftDefender)
 
-    def isDefaultMiddie(self):
-        return (self.playerNumber == DEFAULT_MIDDIE_NUMBER)
+    def isDefaultLeftDefender(self):
+        return (self.role == DEFAULT_LEFT_DEFENDER_NUMBER)
+
+    def isDefaultRightDefender(self):
+        return (self.role == DEFAULT_RIGHT_DEFENDER_NUMBER)
 
     def __str__(self):
         return "I am player number " + self.playerNumber
