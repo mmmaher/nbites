@@ -22,9 +22,7 @@
 namespace tool {
 namespace ballview {
 
-
-class BallViewerPainter : public tool_common::PaintField
-{
+class BallViewerPainter : public tool_common::PaintField {
     Q_OBJECT;
 
 public:
@@ -57,7 +55,7 @@ private:
     QPoint curGlobalMoving;
     QPoint curGlobalVision;
 
-    bool offStationary;
+    bool offlineIsStationary;
     QPoint offCurGlobalStationary;
     QPoint offCurGlobalMoving;
     QPoint offCurGlobalVision;
@@ -66,5 +64,5 @@ private:
     bool paintOffline;
 };
 
-} // namespace ballview
-} // namespace tool
+} // ballview
+} // tool

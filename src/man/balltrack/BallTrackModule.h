@@ -15,13 +15,10 @@
 #include "RobotLocation.pb.h"
 #include <boost/shared_ptr.hpp>
 
-namespace man
-{
-namespace balltrack
-{
+namespace man {
+namespace balltrack {
 
-class BallTrackModule : public portals::Module
-{
+class BallTrackModule : public portals::Module {
 public:
     BallTrackModule();
     ~BallTrackModule();
@@ -45,6 +42,5 @@ private:
     messages::RobotLocation deltaOdometry;
 };
 
-
-} //namespace balltrack
-} //namespace man
+} // balltrack
+} // man

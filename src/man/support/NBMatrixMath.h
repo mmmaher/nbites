@@ -43,6 +43,30 @@ namespace NBMath {
     solve(boost::numeric::ublas::matrix<float> A,
           const boost::numeric::ublas::matrix<float> &B);
 
+    template<class matrix_T>
+    double determinant(boost::numeric::ublas::matrix_expression<matrix_T> const& mat_r)
+    {
+        double det = 1.0;
+
+        matrix_T mLu(mat_r() );
+        boost::numeric::ublas::permutation_matrix<std::size_t> pivots(mat_r().size1() );
+
+        int is_singular = lu_factorize(mLu, pivots);
+
+        if (!is_singular) {
+            for (std::size_t i = 0; i < pivots.size(); ++i) {
+                if (pivots(i) != i) {
+                    det *= -1.0;
+                }
+
+                det *= mLu(i,i);
+            }
+        } else {
+            det = 0.0;
+        }
+
+        return det;
+    }
 
 // Solve the linear system Ax=b for the vector x.
 // NOTE: This method is hard coded to work for 3x3 matrices and 3-vectors.

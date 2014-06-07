@@ -58,8 +58,7 @@ void BallTrackModule::run_()
 
     // HACK!! WHY!!??!?!
     if (visionBallInput.message().frames_off() > 720 &&
-        x < 70 && y < 70)
-    {
+        x < 70 && y < 70) {
         x = CENTER_FIELD_X;
         y = CENTER_FIELD_Y;
     }
@@ -84,23 +83,23 @@ void BallTrackModule::run_()
     ballMessage.get()->set_rel_y_intersect_dest(filters->getRelYIntersectDest());
     ballMessage.get()->set_speed(filters->getSpeed());
 
-    ballMessage.get()->set_stat_rel_x(filters->getStationaryRelX());
-    ballMessage.get()->set_stat_rel_y(filters->getStationaryRelY());
-    ballMessage.get()->set_stat_distance(filters->getStationaryDistance());
-    ballMessage.get()->set_stat_bearing(filters->getStationaryBearing());
+    ballMessage.get()->set_stat_rel_x(filters->getRelXPosEst());
+    ballMessage.get()->set_stat_rel_y(filters->getRelYPosEst());
+    ballMessage.get()->set_stat_distance(filters->getFilteredDist());
+    ballMessage.get()->set_stat_bearing(filters->getFilteredBear());
 
-    ballMessage.get()->set_mov_rel_x(filters->getMovingRelX());
-    ballMessage.get()->set_mov_rel_y(filters->getMovingRelY());
-    ballMessage.get()->set_mov_vel_x(filters->getMovingVelX());
-    ballMessage.get()->set_mov_vel_y(filters->getMovingVelY());
-    ballMessage.get()->set_mov_distance(filters->getMovingDistance());
-    ballMessage.get()->set_mov_bearing(filters->getMovingBearing());
-    ballMessage.get()->set_mov_speed(filters->getMovingSpeed());
+    ballMessage.get()->set_mov_rel_x(filters->getRelXPosEst());
+    ballMessage.get()->set_mov_rel_y(filters->getRelYPosEst());
+    ballMessage.get()->set_mov_vel_x(filters->getRelXVelEst());
+    ballMessage.get()->set_mov_vel_y(filters->getRelYVelEst());
+    ballMessage.get()->set_mov_distance(filters->getFilteredDist());
+    ballMessage.get()->set_mov_bearing(filters->getFilteredBear());
+    ballMessage.get()->set_mov_speed(filters->getSpeed());
 
 #ifdef DEBUG_BALLTRACK
     // Print the observation given, each filter after update, and which filter chosen
 
-    if(visionBallInput.message().on()) {
+    if (visionBallInput.message().on()) {
         std::cout << "See a ball with (dist,bearing):\t( "
                   << visionBallInput.message().distance()
                   << " , " << visionBallInput.message().bearing() << " )"
@@ -115,7 +114,7 @@ void BallTrackModule::run_()
     std::cout << "Odometry is (x,y,h):\t( " << deltaOdometry.x() << " , "
               << deltaOdometry.y() << " , " << deltaOdometry.h() << " )" << std::endl;
 
-    if(filters->isStationary())
+    if (filters->isStationary())
         std::cout << "The STATIONARY filter is best modeling the ball" << std::endl;
     else
         std::cout << "The MOVING filter is best modeling the ball" << std::endl;
@@ -123,13 +122,10 @@ void BallTrackModule::run_()
     filters->printBothFilters();
 #endif
 
-
-
-
     ballLocationOutput.setMessage(ballMessage);
 
     PROF_EXIT(P_BALL_TRACK);
 }
 
-} //namespace balltrack
-} //namespace man
+} // balltrack
+} // man

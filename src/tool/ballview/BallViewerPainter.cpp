@@ -16,8 +16,8 @@ BallViewerPainter::BallViewerPainter(QWidget* parent, float scaleFactor_) :
 void BallViewerPainter::paintOdometry(QPaintEvent* event)
 {
     QPainter painter(this);
-    //Move origin to bottem left and scale to flip the y axis
-    painter.translate(0,FIELD_GREEN_HEIGHT*scaleFactor);
+    // Move origin to bottem left and scale to flip the y axis
+    painter.translate(0,FIELD_GREEN_HEIGHT * scaleFactor);
     painter.scale(scaleFactor, -scaleFactor);
 
     painter.setPen(Qt::white);
@@ -34,12 +34,12 @@ void BallViewerPainter::paintOdometry(QPaintEvent* event)
 void BallViewerPainter::paintBalls(QPaintEvent* event)
 {
     QPainter painter(this);
-    //Move origin to bottem left and scale to flip the y axis
-    painter.translate(0,FIELD_GREEN_HEIGHT*scaleFactor);
+    // Move origin to bottem left and scale to flip the y axis
+    painter.translate(0, FIELD_GREEN_HEIGHT * scaleFactor);
     painter.scale(scaleFactor, -scaleFactor);
 
-    if(paintLog) {
-        if(stationary) {
+    if (paintLog) {
+        if (stationary) {
             painter.setPen(Qt::blue);
             painter.setBrush(Qt::blue);
             painter.drawEllipse(curGlobalMoving, 6, 6);
@@ -47,9 +47,7 @@ void BallViewerPainter::paintBalls(QPaintEvent* event)
             painter.setPen(Qt::black);
             painter.setBrush(Qt::red);
             painter.drawEllipse(curGlobalStationary, 6, 6);
-        }
-
-        else {
+        } else {
             painter.setPen(Qt::black);
             painter.setBrush(Qt::black);
             painter.drawEllipse(curGlobalStationary, 6, 6);
@@ -60,14 +58,15 @@ void BallViewerPainter::paintBalls(QPaintEvent* event)
         }
 
         painter.setBrush(Qt::magenta);
-        if((curGlobalVision.x() > 0) && (curGlobalVision.y() > 0))
+        if ((curGlobalVision.x() > 0) && (curGlobalVision.y() > 0)) {
             painter.drawEllipse(curGlobalVision, 6, 6);
-        else
+        } else {
             painter.drawEllipse(QPoint(3,3), 6, 6);
+        }
     }
 
     if (paintOffline) {
-        if(offStationary) {
+        if (offlineIsStationary) {
             painter.setPen(Qt::blue);
             painter.setBrush(Qt::blue);
             painter.drawEllipse(offCurGlobalMoving, 6, 6);
@@ -75,9 +74,7 @@ void BallViewerPainter::paintBalls(QPaintEvent* event)
             painter.setPen(Qt::black);
             painter.setBrush(Qt::red);
             painter.drawEllipse(offCurGlobalStationary, 6, 6);
-        }
-
-        else {
+        } else {
             painter.setPen(Qt::black);
             painter.setBrush(Qt::black);
             painter.drawEllipse(offCurGlobalStationary, 6, 6);
@@ -88,10 +85,11 @@ void BallViewerPainter::paintBalls(QPaintEvent* event)
         }
 
         painter.setBrush(Qt::magenta);
-        if((offCurGlobalVision.x() > 0) && (offCurGlobalVision.y() > 0))
+        if ((offCurGlobalVision.x() > 0) && (offCurGlobalVision.y() > 0)) {
             painter.drawEllipse(offCurGlobalVision, 6, 6);
-        else
+        } else {
             painter.drawEllipse(QPoint(3,3), 6, 6);
+        }
     }
 }
 
@@ -129,10 +127,11 @@ void BallViewerPainter::updateFilteredBall(messages::FilteredBall ball)
     curGlobalStationary = getGlobalPoint(ball.stat_distance(), ball.stat_bearing());
     curGlobalMoving = getGlobalPoint(ball.mov_distance(), ball.mov_bearing());
     stationary = ball.is_stationary();
-    if(ball.vis().on())
+    if (ball.vis().on()) {
         curGlobalVision   = getGlobalPoint(ball.vis().distance(), ball.vis().bearing());
-    else
+    } else {
         curGlobalVision = QPoint(-1,-1);
+    }
 
     repaint();
 }
@@ -142,11 +141,12 @@ void BallViewerPainter::updateOfflineFilteredBall(messages::FilteredBall ball)
     // Paint the moving and stationary filters
     offCurGlobalStationary = getGlobalPoint(ball.stat_distance(), ball.stat_bearing());
     offCurGlobalMoving = getGlobalPoint(ball.mov_distance(), ball.mov_bearing());
-    offStationary = ball.is_stationary();
-    if(ball.vis().on())
+    offlineIsStationary = ball.is_stationary();
+    if (ball.vis().on()) {
         offCurGlobalVision   = getGlobalPoint(ball.vis().distance(), ball.vis().bearing());
-    else
+    } else {
         offCurGlobalVision = QPoint(-1,-1);
+    }
 
     repaint();
 }
@@ -183,10 +183,9 @@ QPoint BallViewerPainter::getGlobalPoint(float dist, float bear)
 
     float relX = dist*cos + curLocation.x();
     float relY = dist*sin + curLocation.y();
-    QPoint relLoc(relX,relY);
+    QPoint relLoc(relX, relY);
     return relLoc;
 }
 
-
-} // namespace ballview
-} // namespace tool
+} // ballview
+} // tool
