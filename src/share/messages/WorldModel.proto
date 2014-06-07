@@ -34,3 +34,10 @@ message WorldModel
 
     optional bool  claimed_ball = 21;
 }
+
+message TeammateInterpreter
+{
+    optional float  reliability = 1;
+    optional float  player_role = 2;
+}
+
