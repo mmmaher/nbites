@@ -24,6 +24,7 @@
 #include "sharedball/SharedBall.h"
 #include "arms/ArmContactModule.h"
 #include "obstacle/ObstacleModule.h"
+#include "teammateinterpreter/TeammateInterpreterModule.h"
 
 #include <vector>
 
@@ -66,6 +67,7 @@ private:
     behaviors::BehaviorsModule behaviors;
     led::LedEnactorModule leds;
     context::SharedBallModule sharedBall;
+    mate::TeammateInterpreterModule teammateInterpreter[NUM_PLAYERS_PER_TEAM];
 };
 
 }

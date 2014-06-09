@@ -87,6 +87,7 @@ add_subdirectory( audio )
 add_subdirectory( balltrack )
 add_subdirectory( behaviors )
 add_subdirectory( comm )
+add_subdirectory( teammateinterpreter )
 add_subdirectory( gamestate )
 add_subdirectory( guardian )
 add_subdirectory( image )
@@ -119,6 +120,7 @@ target_link_libraries(
   behaviors
   bhwalk
   comm
+  teammateinterpreter
   gamestate
   guardian
   image
