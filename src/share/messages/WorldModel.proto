@@ -38,6 +38,6 @@ message WorldModel
 message TeammateInterpreter
 {
     optional float  reliability = 1;
-    optional float  player_role = 2;
+    optional int32  player_role = 2;
 }
 

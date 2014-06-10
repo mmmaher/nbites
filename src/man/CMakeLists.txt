@@ -87,7 +87,6 @@ add_subdirectory( audio )
 add_subdirectory( balltrack )
 add_subdirectory( behaviors )
 add_subdirectory( comm )
-add_subdirectory( teammateinterpreter )
 add_subdirectory( gamestate )
 add_subdirectory( guardian )
 add_subdirectory( image )
@@ -99,6 +98,7 @@ add_subdirectory( motion )
 add_subdirectory( obstacle )
 add_subdirectory( sensors )
 add_subdirectory( sharedball )
+add_subdirectory( teammateinterpreter )
 add_subdirectory( vision )
 
 set( MAN_SRCS main.cpp
@@ -120,7 +120,6 @@ target_link_libraries(
   behaviors
   bhwalk
   comm
-  teammateinterpreter
   gamestate
   guardian
   image
@@ -135,6 +134,7 @@ target_link_libraries(
   sensors
   sharedball
   support
+  teammateinterpreter
   vision
 )
 

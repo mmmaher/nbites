@@ -23,6 +23,7 @@ add_library(worldview
 # Link project to appropriate libraries.
 target_link_libraries(worldview
   comm
+  teammateinterpreter
   tool_common
   portals
   messages

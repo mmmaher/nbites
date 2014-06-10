@@ -73,7 +73,7 @@ void WorldViewPainter::paintRobotLocation(QPaintEvent* event,
         const QPoint walkingEnd(msg.walking_to_x(), msg.walking_to_y());
         painter.drawLine(locCenter, walkingEnd);
     }
-    
+
     painter.setBrush(brushColor);
     painter.setPen(brushColor);
 
