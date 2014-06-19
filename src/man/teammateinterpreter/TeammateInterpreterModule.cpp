@@ -30,9 +30,6 @@ void TeammateInterpreterModule:: run_()
     if (!(numFrames % FRAMES_BETWEEN_EXECUTIONS)) {
         worldModelIn.latch();
         interpretWorldModel(worldModelIn.message());
-//        if (!(numFrames/FRAMES_BETWEEN_EXECUTIONS % 5)) {
-//            std::cout<<std::endl;
-//        }
     }
     if (numFrames == 3000) {
         numFrames = 0;
@@ -82,8 +79,6 @@ void TeammateInterpreterModule::interpretWorldModel(messages::WorldModel newMode
         playerRole = 0;
     }
 
-    std::cout<<"Reliability: "<<playerReliability<<", Role: "<<playerRole<<std::endl;
-
     portals::Message<messages::TeammateInterpreter> teammateInterpreterMessage(0);
     teammateInterpreterMessage.get()->set_reliability(playerReliability);
     teammateInterpreterMessage.get()->set_player_role(playerRole);
@@ -102,19 +97,7 @@ void TeammateInterpreterModule::interpretReliability(int ballAge)
         ballAgeValue = (float)ballAge * BALL_AGE_SCALE + BALL_AGE_START;
     }
 
-//    std::cout<<"FALLEN: ";
-//    for (int i = 0; i < FALLEN_BUFFER_SIZE; i++) {
-//        std::cout<<"["<<fallenBuffer[i]<<"]";
-//    }
-//    std::cout<<std::endl;
-
     fallenValue = (float)fallenBuffer.sum() * FALLEN_SCALE + FALLEN_START;
-
-//    std::cout<<"SHOOTING: ";
-//    for (int i = 0; i < SHOOTING_BUFFER_SIZE; i++) {
-//        std::cout<<"["<<shootingBuffer[i]<<"]";
-//    }
-//    std::cout<<std::endl;
 
     shootingBufferSum = shootingBuffer.sum();
     shootingPct = (float)shootingBufferSum / (float)SHOOTING_BUFFER_SIZE;
@@ -123,12 +106,6 @@ void TeammateInterpreterModule::interpretReliability(int ballAge)
     if (shootingPct < -1) {
         shootingPct = -1;
     }
-
-//    std::cout<<"WALKING: ";
-//    for (int i = 0; i < WALKING_BUFFER_SIZE; i++) {
-//        std::cout<<"["<<walkingBuffer[i]<<"]";
-//    }
-//    std::cout<<std::endl;
 
     // now calculate binary values
     walkingBufferSum = walkingBuffer.sum();
@@ -140,22 +117,11 @@ void TeammateInterpreterModule::interpretReliability(int ballAge)
     }
     walkingBadly += WALKING_START;
 
-//    std::cout<<"JUMPINGLOC: ";
-//    for (int i = 0; i < JUMPING_LOC_BUFFER_SIZE; i++) {
-//        std::cout<<"["<<jumpingLocBuffer[i]<<"]";
-//    }
-//    std::cout<<std::endl;
-
     if ((float)jumpingLocBuffer.sum() / (float)JUMPING_LOC_BUFFER_SIZE >
         PERC_SHOULD_NOT_JUMP) {
         jumpingLoc = 1.f*JUMPING_LOC_SCALE;
     }
     jumpingLoc += JUMPING_LOC_START;
-
-    std::cout<<"     Old Ball Age: "<<ballAge<<", NewBallAge: "<<ballAgeValue
-             <<", Fallen: "<<fallenValue<<", Shooting: "<<shootingPct
-             <<", Walking: "<<walkingBadly<<", JumpingLoc: "<<jumpingLoc
-             <<std::endl;
 
     tempReliability = ballAgeValue + fallenValue + shootingPct
         + walkingBadly + jumpingLoc - MIN_RELIABILITY;
