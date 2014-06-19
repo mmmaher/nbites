@@ -235,6 +235,8 @@ void BehaviorsModule::prepareMessages()
     for (int i=0; i<NUM_PLAYERS_PER_TEAM; i++) {
         worldModelIn[i].latch();
         pyInterface.setWorldModel_ptr(&worldModelIn[i].message(),i);
+        teammateInterpreterIn[i].latch();
+        pyInterface.setTeammateInterpreter_ptr(&teammateInterpreterIn[i].message(),i);
     }
 
     motionStatusIn.latch();
@@ -331,5 +333,5 @@ void BehaviorsModule::modifySysPath ()
     }
 }
 
-}
-}
+} // namespace behaviors
+} // namespace man

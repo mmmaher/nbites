@@ -48,6 +48,7 @@ BOOST_PYTHON_MODULE(interface)
                                   return_value_policy
                                   <reference_existing_object>()))
         .def("worldModelList", &PyInterface::getWorldModelList)
+        .def("teammateInterpreterList", &PyInterface::getTeammateInterpreterList)
         .add_property("bodyMotionCommand",
                       make_getter(&PyInterface::bodyMotionCommand_ptr,
                                   return_value_policy
@@ -99,5 +100,6 @@ BOOST_PYTHON_MODULE(interface)
         ;
     scope().attr("interface") = interface_ptr;
 }
-}
-}
+
+} // namespace behaviors
+} // namespace man

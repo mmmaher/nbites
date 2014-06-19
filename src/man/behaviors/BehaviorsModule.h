@@ -90,6 +90,7 @@ public:
     portals::InPortal<messages::StiffStatus> stiffStatusIn;
     portals::InPortal<messages::Obstacle> obstacleIn;
     portals::InPortal<messages::VisionObstacle> visionObstacleIn;
+    portals::InPortal<messages::TeammateInterpreter> teammateInterpreterIn[NUM_PLAYERS_PER_TEAM];
 
     portals::OutPortal<messages::LedCommand> ledCommandOut;
     portals::OutPortal<messages::MotionRequest> motionRequestOut;

@@ -34,6 +34,7 @@ public:
     messages::FilteredBall      const * filteredBall_ptr;
     messages::LedCommand        const * ledCommand_ptr;
     messages::WorldModel        const * worldModel_ptr[NUM_PLAYERS_PER_TEAM];
+    messages::TeammateInterpreter const * teammateInterpreter_ptr[NUM_PLAYERS_PER_TEAM];
     messages::MotionCommand     const * bodyMotionCommand_ptr;
     messages::HeadMotionCommand const * headMotionCommand_ptr;
     messages::MotionStatus      const * motionStatus_ptr;
@@ -80,6 +81,18 @@ public:
         boost::python::list list;
         for (int i=0; i<NUM_PLAYERS_PER_TEAM; i++) {
             list.append(worldModel_ptr[i]);
+        }
+        return list;
+    }
+    void setTeammateInterpreter_ptr(const messages::TeammateInterpreter* msg, int i)
+    {
+        teammateInterpreter_ptr[i] = msg;
+    }
+    boost::python::list getTeammateInterpreterList()
+    {
+        boost::python::list list;
+        for (int i = 0; i < NUM_PLAYERS_PER_TEAM; i++) {
+            list.append(teammateInterpreter_ptr[i]);
         }
         return list;
     }

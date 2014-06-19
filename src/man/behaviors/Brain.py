@@ -71,6 +71,8 @@ class Brain(object):
 
         # Information about the environment
         self.ball = None
+        self.playerReliability = [0] * Constants.NUM_PLAYERS_PER_TEAM
+        self.playerRoleGuess = [0] * Constants.NUM_PLAYERS_PER_TEAM
         self.initTeamMembers()
         self.motion = None
         self.game = None
@@ -216,6 +218,8 @@ class Brain(object):
             if (i == self.playerNumber - 1):
                 continue
             self.teamMembers[i].update(self.interface.worldModelList()[i])
+            self.playerReliability[i] = self.interface.teammateInterpreterList()[i].reliability
+            self.playerRoleGuess[i] = self.interface.teammateInterpreterList()[i].player_role
 
     def updateMotion(self):
         self.motion = self.interface.motionStatus
@@ -288,6 +292,19 @@ class Brain(object):
                             Constants.FIELD_WHITE_BOTTOM_SIDELINE_Y,
                             Constants.HEADING_UP)
 
+    def resetDropInInitialLocalization(self):
+        """
+        Set initial location to the usual initial location of player 4,
+        unless they are goalie: set to goalbox (shouldn't be called with goalie)
+        """
+        if self.playerNumber == 1:
+            self.resetLocTo(Constants.MIDFIELD_X,
+                            Constants.FIELD_WHITE_BOTTOM_SIDELINE_Y,
+                            Constants.HEADING_UP)
+        else:
+            self.resetLocTo(Constants.BLUE_GOALBOX_CROSS_MIDPOINT_X,
+                            Constants.FIELD_WHITE_TOP_SIDELINE_Y,
+                            Constants.HEADING_DOWN)
 
     #@todo: HACK HACK HACK Mexico 2012 to make sure we still re-converge properly even if
     #we get manually positioned

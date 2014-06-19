@@ -99,3 +99,14 @@ def setRoleConstants(player, role):
         player.kickoffPosition = cherryPickerKickoff
         player.box = chaserBox
         player.isKickingOff = False
+
+def setDropInRoleConstants(player, role):
+    player.role = role
+    if role == 2 or role == 3 or role == 4 or role == 5:
+        player.homePosition = evenChaserHome
+        player.kickoffPosition = theirKickoff
+        player.box = chaserBox
+        player.isKickingOff = False
+
+    if role == 4:
+        player.isKickingOff = True

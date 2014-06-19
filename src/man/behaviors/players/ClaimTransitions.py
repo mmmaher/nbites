@@ -8,6 +8,9 @@ claimDistance = 50
 def shouldCedeClaim(player):
     if not player.useClaims:
         return False
+    if player.name == 'pDropIn':
+        return False
+
     playerWeight = weightedDistAndHeading(player.brain.ball.distance, \
                                               player.brain.loc.h, player.brain.ball.bearing_deg)
     for mate in player.brain.teamMembers:

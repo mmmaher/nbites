@@ -149,6 +149,9 @@ def determineRole(player):
     if not player.roleSwitching:
         return player.goLater(player.gameState)
 
+    if player.name == 'pDropIn':
+        return player.goLater(player.gameState)
+
     openSpaces = [True, True, True, True]
     for mate in player.brain.teamMembers:
         if mate.role != 1 and mate.active:

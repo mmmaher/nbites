@@ -3,6 +3,7 @@ from ..headTracker import HeadMoves
 import ChaseBallConstants as constants
 import noggin_constants as NogginConstants
 import ClaimTransitions as claimTrans
+import DropInClaimTransitions as DIClaimTrans
 from math import fabs
 
 ####### CHASING STUFF ##############
@@ -24,6 +25,9 @@ def shouldReturnHome(player):
     if player.buffBoxFiltered.checkCondition(player):
         player.claimedBall = False
         return True;
+
+    if player.name == 'pDropIn':
+        return DIClaimTrans.shouldCedeDropInClaim(player)
 
     return claimTrans.shouldCedeClaim(player)
 

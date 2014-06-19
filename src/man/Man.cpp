@@ -9,6 +9,7 @@
 
 #ifndef OFFLINE
 SET_POOL_SIZE(messages::WorldModel,  24);
+SET_POOL_SIZE(messages::TeammateInterpreter, 24);
 SET_POOL_SIZE(messages::JointAngles, 24);
 SET_POOL_SIZE(messages::InertialState, 16);
 SET_POOL_SIZE(messages::PackedImage16, 16);
@@ -209,6 +210,7 @@ Man::Man(boost::shared_ptr<AL::ALBroker> broker, const std::string &name)
     for (int i = 0; i < NUM_PLAYERS_PER_TEAM; ++i)
     {
         behaviors.worldModelIn[i].wireTo(comm._worldModels[i], true);
+        behaviors.teammateInterpreterIn[i].wireTo(&teammateInterpreter[i].teammateInterpreterOutput, true);
     }
 
     leds.ledCommandsIn.wireTo(&behaviors.ledCommandOut);
@@ -284,4 +286,4 @@ void Man::startAndCheckThread(DiagramThread& thread)
     }
 }
 
-}
+} // namespace man
