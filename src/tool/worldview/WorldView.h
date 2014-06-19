@@ -44,7 +44,7 @@ protected:
 
     man::DiagramThread commThread;
     man::comm::CommModule wviewComm;
-    man::mate::TeammateInterpreterModule wviewTeammate;
+    man::mate::TeammateInterpreterModule wviewTeammate[NUM_PLAYERS_PER_TEAM];
 
     int newTeam;
     QMutex mutex;

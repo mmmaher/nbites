@@ -26,45 +26,63 @@ TeammateInterpreterModule::~TeammateInterpreterModule()
 
 void TeammateInterpreterModule:: run_()
 {
-    if (!(numFrames % TIME_BETWEEN_EXECUTIONS)) {
+    numFrames++;
+    if (!(numFrames % FRAMES_BETWEEN_EXECUTIONS)) {
         worldModelIn.latch();
         interpretWorldModel(worldModelIn.message());
+//        if (!(numFrames/FRAMES_BETWEEN_EXECUTIONS % 5)) {
+//            std::cout<<std::endl;
+//        }
     }
-
+    if (numFrames == 3000) {
+        numFrames = 0;
+    }
 }
 
 void TeammateInterpreterModule::interpretWorldModel(messages::WorldModel newModel)
 {
-    // shift buffer to the right once: will drop oldest value
-    // fills array[0] with a '0', which we want as default
-    walkingBuffer = walkingBuffer.shift(-1);
-    if (getSquaredDistance(newModel.my_x(), newModel.my_y(),
-                           newModel.walking_to_x(), newModel.walking_to_y())
-                           > (NOT_MOVING_RADIUS*NOT_MOVING_RADIUS)) {
-        // I am moving somewhere
-        walkingBuffer[0] = 1;
+    if (newModel.active()) {
+        // shift buffer to the right once: will drop oldest value
+        // fills array[0] with a '0', which we want as default
+        fallenBuffer = fallenBuffer.shift(-1);
+        if (newModel.fallen()) {
+            fallenBuffer[1] = 1;
+        }
+
+        shootingBuffer = shootingBuffer.shift(-1);
+        if (!(newModel.my_x() == newModel.kicking_to_x() &&
+              newModel.my_y() == newModel.kicking_to_y())) {
+            // am shooting when kicking_to() does not return current position
+            shootingBuffer[0] = 1;
+        }
+
+        walkingBuffer = walkingBuffer.shift(-1);
+        if (getSquaredDistance(newModel.my_x(), newModel.my_y(),
+                               newModel.walking_to_x(), newModel.walking_to_y())
+            > (NOT_MOVING_RADIUS*NOT_MOVING_RADIUS)) {
+            // I am moving somewhere
+            walkingBuffer[0] = 1;
+        }
+
+        jumpingLocBuffer = jumpingLocBuffer.shift(-1);
+        if (getSquaredDistance(newModel.my_x(), newModel.my_y(),
+                               previousX, previousY)
+            > (TOO_BIG_LOC_JUMP * TOO_BIG_LOC_JUMP)) {
+            jumpingLocBuffer[0] = 1;
+        }
+        previousX = newModel.my_x();
+        previousY = newModel.my_y();
+
+        // update playerRole
+        interpretPlayerRole(newModel);
+        interpretReliability(newModel.ball_age());
+
+    } else {
+        playerReliability = -1;
+        playerRole = 0;
     }
 
-    shootingBuffer = shootingBuffer.shift(-1);
-    if (!(newModel.my_x() == newModel.kicking_to_x() &&
-          newModel.my_y() == newModel.kicking_to_y())) {
-        // am shooting when kicking_to() does not return current position
-        shootingBuffer[0] = 1;
-    }
-
-    jumpingLocBuffer = jumpingLocBuffer.shift(-1);
-    if (getSquaredDistance(newModel.my_x(), newModel.my_y(),
-                           previousX, previousY)
-                           < (TOO_BIG_LOC_JUMP * TOO_BIG_LOC_JUMP)) {
-        jumpingLocBuffer[0] = 1;
-    }
-    previousX = newModel.my_x();
-    previousY = newModel.my_y();
-
-    // update playerRole
-    interpretPlayerRole(newModel);
-    interpretReliability(newModel.ball_age());
-
+    std::cout<<"Reliability: "<<playerReliability<<", Role: "<<playerRole<<std::endl;
 
     portals::Message<messages::TeammateInterpreter> teammateInterpreterMessage(0);
     teammateInterpreterMessage.get()->set_reliability(playerReliability);
@@ -72,35 +90,76 @@ void TeammateInterpreterModule::interpretWorldModel(messages::WorldModel newMode
     teammateInterpreterOutput.setMessage(teammateInterpreterMessage);
 }
 
-void TeammateInterpreterModule::interpretReliability(float ballAge)
+void TeammateInterpreterModule::interpretReliability(int ballAge)
 {
-    float ballAgeValue, fallenValue;
-    float walkingBadly = 0.f, shootingBadly = 0.f, jumpingLoc = 0.f;
+    float ballAgeValue, fallenValue, tempReliability;
+    float shootingPct = 0.f, walkingBadly = 0.f, jumpingLoc = 0.f;
 
     // first calulate normalized values
-    ballAgeValue = ballAge * BALL_AGE_SCALER;
-    fallenValue = fallenBuffer.sum() * FALLEN_SCALER;
+    if (ballAge == -1) {
+        ballAgeValue = 7.f; // when robot has never seen ball
+    } else {
+        ballAgeValue = (float)ballAge * BALL_AGE_SCALE + BALL_AGE_START;
+    }
+
+//    std::cout<<"FALLEN: ";
+//    for (int i = 0; i < FALLEN_BUFFER_SIZE; i++) {
+//        std::cout<<"["<<fallenBuffer[i]<<"]";
+//    }
+//    std::cout<<std::endl;
+
+    fallenValue = (float)fallenBuffer.sum() * FALLEN_SCALE + FALLEN_START;
+
+//    std::cout<<"SHOOTING: ";
+//    for (int i = 0; i < SHOOTING_BUFFER_SIZE; i++) {
+//        std::cout<<"["<<shootingBuffer[i]<<"]";
+//    }
+//    std::cout<<std::endl;
+
+    shootingBufferSum = shootingBuffer.sum();
+    shootingPct = (float)shootingBufferSum / (float)SHOOTING_BUFFER_SIZE;
+    shootingPct = shootingPct*SHOOTING_SCALE + SHOOTING_START;
+
+    if (shootingPct < -1) {
+        shootingPct = -1;
+    }
+
+//    std::cout<<"WALKING: ";
+//    for (int i = 0; i < WALKING_BUFFER_SIZE; i++) {
+//        std::cout<<"["<<walkingBuffer[i]<<"]";
+//    }
+//    std::cout<<std::endl;
 
     // now calculate binary values
     walkingBufferSum = walkingBuffer.sum();
+    // we should partially count shooting as walking... so:
+    walkingBufferSum += shootingBufferSum / 2;
     if ((float)walkingBufferSum / (float)WALKING_BUFFER_SIZE <
         PERC_SHOULD_WALK) {
-        walkingBadly = 1.f * WALKING_SCALER;
+        walkingBadly = 1.f * WALKING_SCALE;
     }
-    shootingBufferSum = shootingBuffer.sum();
-    if ((float)shootingBufferSum / (float)SHOOTING_BUFFER_SIZE <
-        PERC_SHOULD_SHOOT) {
-        shootingBadly = 1.f*SHOOTING_SCALER;
-    }
+    walkingBadly += WALKING_START;
+
+//    std::cout<<"JUMPINGLOC: ";
+//    for (int i = 0; i < JUMPING_LOC_BUFFER_SIZE; i++) {
+//        std::cout<<"["<<jumpingLocBuffer[i]<<"]";
+//    }
+//    std::cout<<std::endl;
+
     if ((float)jumpingLocBuffer.sum() / (float)JUMPING_LOC_BUFFER_SIZE >
         PERC_SHOULD_NOT_JUMP) {
-        jumpingLoc = 1.f*JUMPING_LOC_SCALER;
+        jumpingLoc = 1.f*JUMPING_LOC_SCALE;
     }
+    jumpingLoc += JUMPING_LOC_START;
 
-// SHOULD I RETURN PERCENTAGE OR JUST RANDOM NUMBER
+    std::cout<<"     Old Ball Age: "<<ballAge<<", NewBallAge: "<<ballAgeValue
+             <<", Fallen: "<<fallenValue<<", Shooting: "<<shootingPct
+             <<", Walking: "<<walkingBadly<<", JumpingLoc: "<<jumpingLoc
+             <<std::endl;
 
-    playerReliability = ballAgeValue + fallenValue + walkingBadly +
-        shootingBadly + jumpingLoc;
+    tempReliability = ballAgeValue + fallenValue + shootingPct
+        + walkingBadly + jumpingLoc - MIN_RELIABILITY;
+    playerReliability = (1 - (tempReliability * RELIABILITY_SCALE))*100.f;
 }
 
 /*

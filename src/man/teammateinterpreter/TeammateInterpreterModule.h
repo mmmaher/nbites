@@ -11,6 +11,7 @@
 #include "WorldModel.pb.h"
 
 /**
+ * @author: Megan Maher, June 2014
  *
  * @Class to control estimate of other player roles and their reliability
  * @(how good of a player they are) in drop-in challenge games.
@@ -32,24 +33,44 @@
  *
  * @For determining reliability: uses a scaling as follows:
  *
- *  ---------------------------------------------------------------------------
- * |as if|   VALUES NORMALIZED   |         BINARY VALUES (T/F)           |     |
- * |  in |---------------------------------------------------------------|     |
- * | sec.| ballAge | timesFallen | walkingBad | shootingBad | jumpingLoc |     |
- * |-----|---------------------------------------------------------------|-----|
- * | 600-|-10 mins-|             |            |             |            |-600 |
- * | 540-|    ^    |             |            |             |            |-540 |
- * | 480-|    |    |-all /3 mins-|            |             |--TRUE (1)--|-480 |
- * | 420-|    |    |     ^       |--TRUE (1)--|             |            |-420 |
- * | 360-|    |    |     |       |            |---TRUE (1)--|            |-360 |
- * | 300-|    |    |     |       |            |             |            |-300 |
- * | 240-|    |    |     |       |            |             |            |-240 |
- * | 180-|    |    |     v       |--FALSE (0)-|--FALSE (0)--|            |-180 |
- * | 120-|    |    |--0x /3 mins-|            |             |--FALSE (0)-|-120 |
- * |  60-|    v    |             |            |             |            |-60  |
- * |   0-|--0 mins-|             |            |             |            |-0   |
- *  ---------------------------------------------------------------------------
+ *  --------------------------------------------------------------------
+ * |   |         VALUES NORMALIZED        |    BINARY VALUE (T/F)   |   |
+ * |   |------------------------------------------------------------|   |
+ * |   | ballAge | timesFallen | shooting | walkingBad | jumpingLoc |   |
+ * |---|------------------------------------------------------------|   |
+ * |10-|--5 mins-|1/3 of 3 mins|          |            |--TRUE (1)--|-10|
+ * | 9-|    ^    |     ^       |          |            |            |-9 |
+ * | 8-|    |    |     |       |          |            |            |-8 |
+ * | 7-|  (-1)   |     |       |          |--TRUE (1)--|            |-7 |
+ * | 6-|    |    |     |       |0% of time|            |            |-6 |
+ * | 5-|    |    |     |       |    ^     |            |            |-5 |
+ * | 4-|    |    |     |       |    |     |            |            |-4 |
+ * | 3-|    |    |     v       |    |     |--FALSE (0)-|            |-3 |
+ * | 2-|    |    |-0x in 3 min-|    |     |            |--FALSE (0)-|-2 |
+ * | 1-|    v    |             |    v     |            |            |-1 |
+ * | 0-|--0 mins-|             |  >33.3%  |            |            |-0 |
+ *  --------------------------------------------------------------------
  *
+ * @ The current information for each of the columns above:
+ *     Ball Age:     - Given to us in frames/second, can be up to 10 minutes,
+ *                     given a -1 value if robot has not seen ball yet
+ *                   - If value is > 5 minutes, ballAge value will be greater
+ *                     than 10 without adjusting the max value used for scaling
+ *     Times Fallen: - Calculated in buffer of 3 minutes-long
+ *                   - If fallen more than 1/3 of time, then timesFallen value
+ *                     will be > 10 without adjusting max value used for scaling
+ *     Shooting:     - Calculated in buffer of 3 minutes long
+ *                   - If shooting more than 1/3 of the time, value will be less
+ *                     than 0, without adjusting min value used for scaling
+ *     Walking:      - If walking at least 1/3 of the time, given value of 3,
+ *                     otherwise it is not enough and given value of 7
+ *     Jumping Loc:  - If jumping loc around >= 1/3 of the time, given value of
+ *                     10 for too much, otherwise it is okay: value of 2
+ *
+ * @ This makes min value for scaling (0 + 2 + 0 + 3 + 2) = 7
+ * @ and max value for scaling (10 + 10 + 6 + 7 + 10) = 43
+ * @ Therefore: to create reliability between 0 and 1, subtract 7 and
+ * @      multiply by 1 / range of scale (MAX - MIN)
  */
 
 namespace man {
@@ -61,31 +82,36 @@ const int RIGHT_DEFENDER = 3;
 const int CHASER = 4;
 const int STRIKER = 5;
 
-const int TIME_BETWEEN_EXECUTIONS = 30; //only want to execute every second
+const int FRAMES_BETWEEN_EXECUTIONS = 30; //only want to execute every second
 
-const int FALLEN_BUFFER_SIZE = 180; // = 180 seconds / 3 minutes
-const int WALKING_BUFFER_SIZE = 120; // = 120 seconds / 2 minutes
-const int SHOOTING_BUFFER_SIZE = 180; // = 180 seconds / 3 minutes
-const int JUMPING_LOC_BUFFER_SIZE = 120; // = 120 seconds / 2 minutes
+const int FALLEN_BUFFER_SIZE = 180; // = 180 seconds = 3 minutes
+const int SHOOTING_BUFFER_SIZE = 180; // = 180 seconds = 3 minutes
+const int WALKING_BUFFER_SIZE = 120; // = 120 seconds = 2 minutes
+const int JUMPING_LOC_BUFFER_SIZE = 120; // = 120 seconds = 2 minutes
 
-const float BALL_AGE_SCALER = 1.f / 30.f; // converts from FPS to seconds
-const float FALLEN_SCALER = 1.f;
-const float WALKING_SCALER = 240.f;
-const float SHOOTING_SCALER = 180.f;
-const float JUMPING_LOC_SCALER = 360.f;
+const float BALL_AGE_SCALE = 2.f / (30.f * 30.f * 60.f); // from FPS to minutes*2
+const float FALLEN_SCALE = 6.f / 60.f; // 6/1min = scale, /60 = "minutes"
+const float SHOOTING_SCALE = -18.f; // 1/3t -> -6, t=-18 (will add 6 to answer)
+const float WALKING_SCALE = 4.f; // range
+const float JUMPING_LOC_SCALE = 8.f; // range
 
 const float BALL_AGE_START = 0.f;
-const float FALLEN_START = 120.f;
-const float WALKING_START = 180.f;
-const float SHOOTING_START = 180.f;
-const float JUMPING_LOC_START = 120.f;
+const float FALLEN_START = 2.f;
+const float SHOOTING_START = 6.f;
+const float WALKING_START = 3.f;
+const float JUMPING_LOC_START = 2.f;
 
-const float PERC_SHOULD_WALK = .3f;
-const float PERC_SHOULD_SHOOT = .1f;
-const float PERC_SHOULD_NOT_JUMP = .3f;
+const float MIN_RELIABILITY = BALL_AGE_START + FALLEN_START + WALKING_START +
+    SHOOTING_START + JUMPING_LOC_START; // 7
+const float MAX_RELIABILITY = 43.f; // Change to constant
+const float RELIABILITY_SCALE = 1.f / (MAX_RELIABILITY - MIN_RELIABILITY);
 
-const int NOT_MOVING_RADIUS = 5;
-const int TOO_BIG_LOC_JUMP = 10;
+const float PERC_SHOULD_WALK = 1.f / 3.f;
+const float PERC_SHOULD_SHOOT = 1.f / 3.f;
+const float PERC_SHOULD_NOT_JUMP = 1.f / 3.f;
+
+const float NOT_MOVING_RADIUS = 5.f;
+const float TOO_BIG_LOC_JUMP = 10.f;
 
 const float DEFENDER_BOUNDARY = CENTER_FIELD_X - CENTER_FIELD_X / 4.f;
 const float CHASER_BOUNDARY = CENTER_FIELD_X + 2.f*(CENTER_FIELD_X / 5.f);
@@ -106,7 +132,7 @@ public:
 
 private:
     void interpretWorldModel(messages::WorldModel newModel);
-    void interpretReliability(float ballAge);
+    void interpretReliability(int ballAge);
     void interpretPlayerRole(messages::WorldModel newModel);
     int getZone(float x, float y);
     float getSquaredDistance(float x1, float y1, float x2, float y2);
@@ -126,7 +152,7 @@ private:
     float previousY;
 
     float playerReliability;
-    float playerRole;
+    int playerRole;
 };
 
 } // namespace context

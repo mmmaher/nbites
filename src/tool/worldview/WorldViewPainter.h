@@ -6,6 +6,7 @@
  * @author EJ Googins April 2013
  * @modified Brian Jacobel April 2013
  * @modified Wils Dawson June 2013
+ * @modified Megan Maher June 2014
  *
  */
 

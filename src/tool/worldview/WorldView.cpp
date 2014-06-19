@@ -17,7 +17,9 @@ WorldView::WorldView(QWidget* parent)
 {
     commThread.addModule(*this);
     commThread.addModule(wviewComm);
-    commThread.addModule(wviewTeammate);
+    for (int i = 0; i < NUM_PLAYERS_PER_TEAM; i++) {
+        commThread.addModule(wviewTeammate[i]);
+    }
 
 #ifdef USING_LAB_FIELD
     fieldPainter = new WorldViewPainter(this, 2.);
@@ -182,8 +184,8 @@ WorldView::WorldView(QWidget* parent)
     for (int i = 0; i < NUM_PLAYERS_PER_TEAM; ++i)
     {
         commIn[i].wireTo(wviewComm._worldModels[i]);
-        wviewTeammate.worldModelIn.wireTo(wviewComm._worldModels[i]);
-        teammateIn[i].wireTo(&wviewTeammate.teammateInterpreterOutput);
+        wviewTeammate[i].worldModelIn.wireTo(wviewComm._worldModels[i]);
+        teammateIn[i].wireTo(&wviewTeammate[i].teammateInterpreterOutput);
     }
 }
 
