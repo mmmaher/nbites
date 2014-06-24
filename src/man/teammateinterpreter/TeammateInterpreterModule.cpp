@@ -47,9 +47,7 @@ void TeammateInterpreterModule::interpretWorldModel(messages::WorldModel newMode
         }
 
         shootingBuffer = shootingBuffer.shift(-1);
-        if (!(newModel.my_x() == newModel.kicking_to_x() &&
-              newModel.my_y() == newModel.kicking_to_y())) {
-            // am shooting when kicking_to() does not return current position
+        if (newModel.in_kicking_state()) {
             shootingBuffer[0] = 1;
         }
 
