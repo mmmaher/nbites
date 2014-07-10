@@ -113,7 +113,6 @@ WorldView::WorldView(QWidget* parent)
     }
 
     sharedIn.wireTo(&wviewShared.sharedBallOutput);
-
 }
 
 
@@ -137,8 +136,6 @@ void WorldView::run_()
     }
     sharedIn.latch();
     fieldPainter->updateWithSharedBallMessage(sharedIn.message());
-
-
 
     mutex.unlock();
 }
@@ -182,5 +179,5 @@ void WorldView::updateStatus(messages::WorldModel msg, int index)
     }
 }
 
-}
-}
+} //namespace worldview
+} //namespace tool
