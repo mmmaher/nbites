@@ -98,7 +98,8 @@ void SharedBallModule::chooseRobots()
 
         for (int j = 0; j < NUM_PLAYERS_PER_TEAM; j++)
         {
-            if (!messages[i].ball_on() || !messages[j].ball_on())
+            if (!messages[i].ball_on() || !messages[j].ball_on() ||
+                !messages[i].active() || !messages[j].active())
             {
                 inEstimate[i][j] = 0;
                 continue;
