@@ -119,6 +119,7 @@ public :
     portals::OutPortal<messages::InertialState> inertsOut;
 protected :
     virtual void run_();
+    void processImage(messages::YUVImage image, std::string vtype);
 private :
     ImageTranscriber& it;
     size_t image_index;
