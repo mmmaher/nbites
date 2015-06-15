@@ -41,11 +41,15 @@ Vision Constants that span multiple classes and systems.
 #  error Undefined Nao image type
 #endif
 
+#define NAO_IMAGE_LOW_RES_WIDTH      160
+#define NAO_IMAGE_LOW_RES_HEIGHT     120
+
 #define NAO_IMAGE_BYTE_SIZE    (NAO_IMAGE_WIDTH * NAO_IMAGE_HEIGHT * 2)
 
 #define NAO_IMAGE_ROW_OFFSET          (NAO_IMAGE_WIDTH * 2)
 #define NAO_SIM_IMAGE_ROW_OFFSET      (NAO_SIM_IMAGE_WIDTH * 3)
 
+// This assumes standard resolution... may need to change?
 #define AVERAGED_IMAGE_WIDTH  320
 #define AVERAGED_IMAGE_HEIGHT 240
 

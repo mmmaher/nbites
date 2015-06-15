@@ -52,7 +52,7 @@ private:
 class ImageTranscriber
 {
 public:
-    ImageTranscriber(Camera::Type);
+    ImageTranscriber(Camera::Type which, int wd, int ht);
     ~ImageTranscriber();
 
     // The heart of the transcriber, clients calls this for new image
@@ -63,9 +63,8 @@ public:
 private:
     enum
     {
-        WIDTH = NAO_IMAGE_WIDTH,
-        HEIGHT = NAO_IMAGE_HEIGHT,
-        SIZE = WIDTH * HEIGHT * 2,
+        LOW_RES_WIDTH = NAO_IMAGE_LOW_RES_WIDTH,
+        LOW_RES_HEIGHT = NAO_IMAGE_LOW_RES_HEIGHT,
         NUM_BUFFERS = 4
     };
 
@@ -102,6 +101,8 @@ private:
     struct v4l2_buffer requestBuff;
 
     uint64_t timeStamp;
+
+    int width, height, size;
 };
 
 // Module that wraps Transcriber's functionality

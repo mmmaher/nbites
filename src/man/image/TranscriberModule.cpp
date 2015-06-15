@@ -53,11 +53,16 @@ TranscriberBuffer::~TranscriberBuffer()
            "Releasing buffer failed.");
 }
 
-ImageTranscriber::ImageTranscriber(Camera::Type which) :
+ImageTranscriber::ImageTranscriber(Camera::Type which, int wd, int ht) :
     settings(Camera::getSettings(which)),
     cameraType(which),
     timeStamp(0)
 {
+    width = wd;
+    height = ht;
+    size = 2*width*height;
+    std::cout<<"TRANSCRIBER RESOLUTION: "<<width<<"x"<<height<<std::endl;
+
     initOpenI2CAdapter();
     initSelectCamera();
     initOpenVideoDevice();
@@ -131,7 +136,7 @@ void ImageTranscriber::initOpenVideoDevice() {
 }
 
 void ImageTranscriber::initSetCameraDefaults() {
-    v4l2_std_id esid0 = WIDTH == 320 ? 0x04000000UL : 0x08000000UL;
+    v4l2_std_id esid0 = cameraType == Camera::BOTTOM ? 0x04000000UL : 0x08000000UL;
     verify(ioctl(fd, VIDIOC_S_STD, &esid0),
            "Setting default parameters failed.");
     }
@@ -141,9 +146,10 @@ void ImageTranscriber::initSetImageFormat() {
     struct v4l2_format fmt;
     memset(&fmt, 0, sizeof(struct v4l2_format));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    // We ask for a 640 by 480 image
-    fmt.fmt.pix.width = WIDTH;
-    fmt.fmt.pix.height = HEIGHT;
+    // We ask for an image with parameter-specified width and height
+    fmt.fmt.pix.width = width;
+    fmt.fmt.pix.height = height;
+
     //"In this format each four bytes is two pixels. Each four bytes is two
     //Y's, a Cb and a Cr. Each Y goes to one of the pixels, and the Cb and
     //Cr belong to both pixels. As you can see, the Cr and Cb components have
@@ -153,7 +159,7 @@ void ImageTranscriber::initSetImageFormat() {
     verify(ioctl(fd, VIDIOC_S_FMT, &fmt),
            "Setting image format failed.");
 
-    if(fmt.fmt.pix.sizeimage != (unsigned int)SIZE)
+    if(fmt.fmt.pix.sizeimage != (unsigned int)size)
         std::cerr << "CAMERA ERROR::Size setting is WRONG." << std::endl;
 }
 
@@ -461,7 +467,7 @@ messages::YUVImage ImageTranscriber::getNextImage()
         PROF_EXIT(P_BOT_DQBUF);
     }
 
-    if(requestBuff.bytesused != (unsigned int)SIZE)
+    if(requestBuff.bytesused != (unsigned int)size)
         std::cerr << "CAMERA::ERROR::Wrong buffer size!" << std::endl;
 
     static bool shout = true;
@@ -474,7 +480,11 @@ messages::YUVImage ImageTranscriber::getNextImage()
     return messages::YUVImage(new TranscriberBuffer(mem[requestBuff.index],
                                                     fd,
                                                     requestBuff),
-                              2*WIDTH, HEIGHT, 2*WIDTH);
+                              2*width, height, 2*width);
+    return messages::YUVImage(new TranscriberBuffer(mem[requestBuff.index],
+                                                    fd,
+                                                    requestBuff),
+                              2*width, height, 2*width);
 }
 
 TranscriberModule::TranscriberModule(ImageTranscriber& trans)
@@ -505,7 +515,7 @@ void TranscriberModule::run_()
 
 #ifdef USE_LOGGING
     if (control::flags[control::tripoint]) {
-        processImage("tripoint");
+        processImage(image, "tripoint");
     }
 #endif
 }
@@ -521,9 +531,13 @@ void TranscriberModule::processImage(messages::YUVImage image, std::string vtype
         image_from = "camera_BOT";
     }
 
+    // this is the same as "width", "height", and "size" -> global variables already set (res)
     long im_size = (image.width() * image.height() * 1);
     int im_width = image.width() / 2;
     int im_height= image.height();
+
+    std::cout<<"Im size, width, height: "<<im_size<<", "<<im_width<<", "<<im_height<<std::endl;
+    std::cout<<"Given width, height: "<<image.width()<<","<<image.height()<<std::endl;
 
     messages::JointAngles ja_pb = jointsIn.message();
     messages::InertialState is_pb = inertsIn.message();
@@ -646,8 +660,7 @@ void TranscriberModule::processImage(messages::YUVImage image, std::string vtype
     joints.append(SExpr("r_ankle_roll", ja_pb.r_ankle_roll() ));
     contents.push_back(joints);
 
-    NBLog(NBL_IMAGE_BUFFER, vtype,
-                 contents, im_buf);
+    NBLog(NBL_IMAGE_BUFFER, vtype, contents, im_buf);
 }
 
 
