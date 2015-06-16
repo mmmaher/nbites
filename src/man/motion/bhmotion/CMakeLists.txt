@@ -5,6 +5,9 @@ add_definitions(-DLINUX -DRELEASE -DTARGET_ROBOT)
 
 set( bhmotion_srcs
   MotionSelector.cpp
+  bhkick/KickEngine.cpp
+  bhkick/KickEngineData.cpp
+  bhkick/KickEngineParameters.cpp
   bhwalk/BHWalkProvider.cpp
   bhwalk/WalkingEngine.cpp
   bhwalk/WalkingEngineKicks.cpp
