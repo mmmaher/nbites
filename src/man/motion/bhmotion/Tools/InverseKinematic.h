@@ -87,8 +87,8 @@ public:
     const Vector3BH<>& rHipToFoot = rTarget1.translation;
     const float lMinusPi_4MinusJoint1 = -std::atan2(-lHipToFoot.y, -lHipToFoot.z);
     const float rPi_4AndJoint1 = -std::atan2(-rHipToFoot.y, -rHipToFoot.z);
-    const float lJoint2MinusAlpha = std::atan2(-lHipToFoot.x, std::sqrt(sqrBH(lHipToFoot.y) + sqrBH(lHipToFoot.z)) * -sgnBH(lHipToFoot.z));
-    const float rJoint2MinusAlpha = std::atan2(-rHipToFoot.x, std::sqrt(sqrBH(rHipToFoot.y) + sqrBH(rHipToFoot.z)) * -sgnBH(rHipToFoot.z));
+    const float lJoint2MinusAlpha = std::atan2(-lHipToFoot.x, std::sqrt(sqrBH(lHipToFoot.y) + sqrBH(lHipToFoot.z)) * (float)-sgnBH(lHipToFoot.z));
+    const float rJoint2MinusAlpha = std::atan2(-rHipToFoot.x, std::sqrt(sqrBH(rHipToFoot.y) + sqrBH(rHipToFoot.z)) * (float)-sgnBH(rHipToFoot.z));
     const Vector3BH<> lFootRotationC2 = RotationMatrixBH::fromRotationY(-lJoint2MinusAlpha).rotateX(-lMinusPi_4MinusJoint1) * lTarget1.rotation.c2;
     const Vector3BH<> rFootRotationC2 = RotationMatrixBH::fromRotationY(-rJoint2MinusAlpha).rotateX(-rPi_4AndJoint1) * rTarget1.rotation.c2;
     const float h1 = robotDimensions.upperLegLength;
@@ -187,11 +187,11 @@ public:
     Pose3DBH target(position);
     JointDataBH::Joint firstJoint(left ? JointDataBH::LHipYawPitch : JointDataBH::RHipYawPitch);
     int sign(left ? -1 : 1);
-    target.translation.y += robotDimensions.lengthBetweenLegs / 2.f * sign; // translate to origin of leg
+    target.translation.y += robotDimensions.lengthBetweenLegs / 2.f * (float)sign; // translate to origin of leg
     // rotate by 45° around origin for Nao
     // calculating sqrt(2) is faster than calculating the resp. rotation matrix with getRotationX()
     static const float sqrt2_2 = std::sqrt(2.0f) * 0.5f;
-    RotationMatrixBH rotationX_pi_4 = RotationMatrixBH(Vector3BH<>(1, 0, 0), Vector3BH<>(0, sqrt2_2, sqrt2_2 * sign), Vector3BH<>(0, sqrt2_2 * -sign, sqrt2_2));
+    RotationMatrixBH rotationX_pi_4 = RotationMatrixBH(Vector3BH<>(1, 0, 0), Vector3BH<>(0, sqrt2_2, sqrt2_2 * (float)sign), Vector3BH<>(0, sqrt2_2 * (float)-sign, sqrt2_2));
     target.translation = rotationX_pi_4 * target.translation;
     target.rotation = rotationX_pi_4 * target.rotation;
 
@@ -219,11 +219,11 @@ public:
     float joint3 = pi - std::acos(cosKnee); // implicitly solve discrete ambiguousness (knee always moves forward)
     float joint4 = -std::acos(cosLowerLeg);
     joint4 -= std::atan2(target.translation.x, Vector2BH<>(target.translation.y, target.translation.z).abs());
-    float joint5 = std::atan2(target.translation.y, target.translation.z) * sign;
+    float joint5 = std::atan2(target.translation.y, target.translation.z) * (float)sign;
 
     // calulate rotation matrix before hip joints
     RotationMatrixBH hipFromFoot;
-    hipFromFoot.rotateX(joint5 * -sign);
+    hipFromFoot.rotateX(joint5 * (float)-sign);
     hipFromFoot.rotateY(-joint4 - joint3);
 
     // compute rotation matrix for hip from rotation before hip and desired rotation
@@ -232,10 +232,10 @@ public:
     // compute joints from rotation matrix using theorem of euler angles
     // see http://www.geometrictools.com/Documentation/EulerAngles.pdf
     // this is possible because of the known order of joints (z, x, y seen from body resp. y, x, z seen from foot)
-    float joint1 = std::asin(-hip[2].y) * -sign;
+    float joint1 = std::asin(-hip[2].y) * (float)-sign;
     joint1 -= pi_4; // because of the 45°-rotational construction of the Nao legs
     float joint2 = -std::atan2(hip[2].x, hip[2].z);
-    float joint0 = std::atan2(hip[0].y, hip[1].y) * -sign;
+    float joint0 = std::atan2(hip[0].y, hip[1].y) * (float)-sign;
 
     // set computed joints in jointData
     jointData.angles[firstJoint + 0] = joint0;
@@ -265,8 +265,8 @@ public:
     Pose3DBH target(position);
     JointDataBH::Joint firstJoint(left ? JointDataBH::LHipYawPitch : JointDataBH::RHipYawPitch);
     const int sign(left ? -1 : 1);
-    target.translation.y += robotDimensions.lengthBetweenLegs / 2 * sign; // translate to origin of leg
-    target = Pose3DBH().rotateZ(joint0 * -sign).rotateX(pi_4 * sign).conc(target); // compute residual transformation with fixed joint0
+    target.translation.y += robotDimensions.lengthBetweenLegs / 2 * (float)sign; // translate to origin of leg
+    target = Pose3DBH().rotateZ(joint0 * (float)-sign).rotateX(pi_4 * (float)sign).conc(target); // compute residual transformation with fixed joint0
 
     // use cosine theorem and arctan to compute first three joints
     float length = target.translation.abs();
@@ -286,18 +286,18 @@ public:
       cosUpperLeg = clipping.limit(cosUpperLeg);
       reachable = false;
     }
-    float joint1 = target.translation.z == 0.0f ? 0.0f : std::atan(target.translation.y / -target.translation.z) * sign;
+    float joint1 = target.translation.z == 0.0f ? 0.0f : std::atan(target.translation.y / -target.translation.z) * (float)sign;
     float joint2 = -std::acos(cosUpperLeg);
-    joint2 -= std::atan2(target.translation.x, Vector2BH<>(target.translation.y, target.translation.z).abs() * -sgnBH(target.translation.z));
+    joint2 -= std::atan2(target.translation.x, Vector2BH<>(target.translation.y, target.translation.z).abs() * (float)-sgnBH(target.translation.z));
     float joint3 = pi - std::acos(cosKnee);
-    RotationMatrixBH beforeFoot = RotationMatrixBH().rotateX(joint1 * sign).rotateY(joint2 + joint3);
+    RotationMatrixBH beforeFoot = RotationMatrixBH().rotateX(joint1 * (float)sign).rotateY(joint2 + joint3);
     joint1 -= pi_4; // because of the strange hip of Nao
 
     // compute joints from rotation matrix using theorem of euler angles
     // see http://www.geometrictools.com/Documentation/EulerAngles.pdf
     // this is possible because of the known order of joints (y, x, z) where z is left open and is seen as failure
     RotationMatrixBH foot = beforeFoot.invert() * target.rotation;
-    float joint5 = std::asin(-foot[2].y) * -sign * -1;
+    float joint5 = std::asin(-foot[2].y) * (float)-sign * -1;
     float joint4 = -std::atan2(foot[2].x, foot[2].z) * -1;
     //float failure = atan2(foot[0].y, foot[1].y) * sign;
 
@@ -404,7 +404,7 @@ public:
 
         iterationCounter++;
 
-        const Pose3DBH elbowRotation(RotationMatrixBH(n, bestAngle + angleDiff * i));
+        const Pose3DBH elbowRotation(RotationMatrixBH(n, bestAngle + angleDiff * (float)i));
         const Vector3BH<> possibleElbow = elbowRotation * pointOnCircle;
         const Vector3BH<> elbowDir = (M3 - possibleElbow).normalizeBH();
         float quality = elbowDir * tDir;
@@ -412,7 +412,7 @@ public:
         {
           bestQuality = quality;
           bestMatch = possibleElbow;
-          newBestAngle = bestAngle + angleDiff * i;
+          newBestAngle = bestAngle + angleDiff * (float)i;
         }
       }
       angleDiff /= 2.0f;
@@ -496,7 +496,7 @@ public:
   {
     JointDataBH::Joint firstJoint(left ? JointDataBH::LShoulderPitch : JointDataBH::RShoulderPitch);
     const int sign(left ? -1 : 1);
-    const Vector3BH<> pos(position - Vector3BH<>(robotDimensions.armOffset.x, robotDimensions.armOffset.y * -sign, robotDimensions.armOffset.z));
+    const Vector3BH<> pos(position - Vector3BH<>(robotDimensions.armOffset.x, robotDimensions.armOffset.y * (float)-sign, robotDimensions.armOffset.z));
     float& joint0 = jointData.angles[firstJoint + 0];
     float& joint1 = jointData.angles[firstJoint + 1];
     const float& joint2 = jointData.angles[firstJoint + 2] = elbowYaw;
@@ -513,12 +513,12 @@ public:
     // elbow is streched in zero-position, hence pi - innerAngle
     joint3 = -(pi - std::acos(cosElbow));
     // compute temporary end effector position from known third and fourth joint angle
-    const Pose3DBH tempPose = Pose3DBH(robotDimensions.upperArmLength, robotDimensions.yElbowShoulder * -sign, 0).rotateX(joint2 * -sign).rotateZ(joint3 * -sign).translate(robotDimensions.lowerArmLength, 0, 0);
+    const Pose3DBH tempPose = Pose3DBH(robotDimensions.upperArmLength, robotDimensions.yElbowShoulder * (float)-sign, 0).rotateX(joint2 * (float)-sign).rotateZ(joint3 * (float)-sign).translate(robotDimensions.lowerArmLength, 0, 0);
 
     /* offset caused by third and fourth joint angle */                /* angle needed to realise y-component of target position */
-    joint1 = std::atan2(tempPose.translation.y * sign, tempPose.translation.x) + std::asin(pos.y / Vector2BH<>(tempPose.translation.x, tempPose.translation.y).abs()) * -sign;
+    joint1 = std::atan2(tempPose.translation.y * (float)sign, tempPose.translation.x) + std::asin(pos.y / Vector2BH<>(tempPose.translation.x, tempPose.translation.y).abs()) * (float)-sign;
     // refresh temporary endeffector position with known joint1
-    const Pose3DBH tempPose2 = Pose3DBH().rotateZ(joint1 * -sign).conc(tempPose);
+    const Pose3DBH tempPose2 = Pose3DBH().rotateZ(joint1 * (float)-sign).conc(tempPose);
 
     /* first compensate offset from temporary position */       /* angle from target x- and z-component of target position */
     joint0 = -std::atan2(tempPose2.translation.z, tempPose2.translation.x) + std::atan2(pos.z, pos.x);
