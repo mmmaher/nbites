@@ -95,7 +95,7 @@ endif()
 # Actual subdirectories
 include_directories( support )
 add_subdirectory( support )
-include_directories( motion/bhwalk ) # @todo hack?
+include_directories( motion/bhmotion ) # @todo hack?
 
 # Actual modules
 add_subdirectory( arms )
@@ -135,7 +135,7 @@ target_link_libraries(
   audio
   balltrack
   behaviors
-  bhwalk
+  bhmotion
   comm
   control
   gamestate

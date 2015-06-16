@@ -14,7 +14,7 @@
 #include "MotionConstants.h"
 
 // Motion providers
-#include "bhwalk/BHWalkProvider.h"
+#include "bhmotion/bhwalk/BHWalkProvider.h"
 #include "ScriptedProvider.h"
 #include "NullBodyProvider.h"
 #include "HeadProvider.h"
