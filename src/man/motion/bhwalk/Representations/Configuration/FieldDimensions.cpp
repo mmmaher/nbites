@@ -185,7 +185,7 @@ void FieldDimensionsBH::LinesTable::push(const Vector2BH<>& s, const Vector2BH<>
 void FieldDimensionsBH::LinesTable::pushCircle(const Vector2BH<>& center, float radius, int numOfSegments)
 {
   Vector2BH<> p1, p2;
-  for(float a = 0; a <= pi_4; a += pi2 / numOfSegments)
+  for(float a = 0; a <= pi_4; a += pi2 / (float)numOfSegments)
   {
     p1 = Vector2BH<>(sin(a), cos(a)) * radius;
     if(a > 0)
@@ -259,7 +259,7 @@ bool FieldDimensionsBH::LinesTable::getClosestPoint(Vector2BH<>& vMin, const Pos
   // target angle -> target index
   float r = p.rotation / pi2 * numberOfRotations + 0.5f;
   if(r < 0)
-    r += numberOfRotations;
+    r += (float)numberOfRotations;
   int targetRot = int(r);
   ASSERT(targetRot >= 0 && targetRot < numberOfRotations);
   targetRot %= trueNumberOfRotations;
@@ -269,11 +269,11 @@ bool FieldDimensionsBH::LinesTable::getClosestPoint(Vector2BH<>& vMin, const Pos
     if(i->length >= minLength)
     {
       // angle -> index
-      float r = (i->corner.rotation + pi_2) / pi2 * numberOfRotations + 0.5f;
+      float r = (i->corner.rotation + pi_2) / pi2 * (float)numberOfRotations + 0.5f;
       if(r < 0)
-        r += numberOfRotations;
+        r += (float)numberOfRotations;
       else if(r >= numberOfRotations)
-        r -= numberOfRotations;
+        r -= (float)numberOfRotations;
       int rot = int(r);
       ASSERT(rot >= 0 && rot < numberOfRotations);
       rot %= trueNumberOfRotations;

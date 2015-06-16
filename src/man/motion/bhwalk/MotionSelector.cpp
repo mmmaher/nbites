@@ -74,7 +74,7 @@ void MotionSelector::update(MotionSelectionBH& motionSelection)
     // increase / decrease all ratios according to target motion
     const unsigned deltaTime(theFrameInfoBH.getTimeSince(lastExecution));
     const int interpolationTime = prevMotion == MotionRequestBH::specialAction && lastActiveSpecialAction == SpecialActionRequest::playDead ? playDeadDelay : interpolationTimes[motionSelection.targetMotion];
-    float delta((float)deltaTime / interpolationTime);
+    float delta((float)deltaTime / (float)interpolationTime);
     ASSERT(SystemCall::getMode() == SystemCall::logfileReplay || delta > 0.00001f);
     float sum(0);
     for(int i = 0; i < MotionRequestBH::numOfMotions; i++)

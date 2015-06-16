@@ -169,7 +169,7 @@ public:
   */
   inline V abs() const
   {
-    return (V) std::sqrt(((float)x) * x + ((float)y) * y);
+    return (V) std::sqrt(((float)x) * (float)x + ((float)y) * (float)y);
   }
 
   /**

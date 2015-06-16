@@ -685,8 +685,8 @@ bool Geometry::calculatePointOnFieldHacked
   float xFactor = cameraInfo.focalLengthInv,
         yFactor = cameraInfo.focalLengthInv;
 
-  Vector3BH<> vectorToCenter(1, float(cameraInfo.opticalCenter.x - x) * xFactor,
-                           float(cameraInfo.opticalCenter.y - y) * yFactor);
+  Vector3BH<> vectorToCenter(1, float(cameraInfo.opticalCenter.x - (float)x) * xFactor,
+                           float(cameraInfo.opticalCenter.y - (float)y) * yFactor);
 
   Vector3BH<> vectorToCenterWorld = cameraMatrix.rotation * vectorToCenter;
 
@@ -719,8 +719,8 @@ bool Geometry::calculatePointOnField
   float xFactor = cameraInfo.focalLengthInv,
         yFactor = cameraInfo.focalLengthInv;
 
-  Vector3BH<> vectorToCenter(1, float(cameraInfo.opticalCenter.x - x) * xFactor,
-                           float(cameraInfo.opticalCenter.y - y) * yFactor);
+  Vector3BH<> vectorToCenter(1, float(cameraInfo.opticalCenter.x - (float)x) * xFactor,
+                           float(cameraInfo.opticalCenter.y - (float)y) * yFactor);
 
   Vector3BH<> vectorToCenterWorld = cameraMatrix.rotation * vectorToCenter;
 
@@ -834,13 +834,13 @@ bool Geometry::getIntersectionPointsOfLineAndRectangle(
   Vector2BH<> point[2];
   if(line.direction.x != 0)
   {
-    float y1 = line.base.y + (bottomLeft.x - line.base.x) * line.direction.y / line.direction.x;
+    float y1 = line.base.y + ((float)bottomLeft.x - (float)line.base.x) * line.direction.y / line.direction.x;
     if((y1 >= bottomLeft.y) && (y1 <= topRight.y))
     {
       point[foundPoints].x = (float) bottomLeft.x;
       point[foundPoints++].y = y1;
     }
-    float y2 = line.base.y + (topRight.x - line.base.x) * line.direction.y / line.direction.x;
+    float y2 = line.base.y + ((float)topRight.x - (float)line.base.x) * line.direction.y / line.direction.x;
     if((y2 >= bottomLeft.y) && (y2 <= topRight.y))
     {
       point[foundPoints].x = (float) topRight.x;
@@ -849,7 +849,7 @@ bool Geometry::getIntersectionPointsOfLineAndRectangle(
   }
   if(line.direction.y != 0)
   {
-    float x1 = line.base.x + (bottomLeft.y - line.base.y) * line.direction.x / line.direction.y;
+    float x1 = line.base.x + ((float)bottomLeft.y - (float)line.base.y) * line.direction.x / line.direction.y;
     if((x1 >= bottomLeft.x) && (x1 <= topRight.x) && (foundPoints < 2))
     {
       point[foundPoints].x = x1;
@@ -859,7 +859,7 @@ bool Geometry::getIntersectionPointsOfLineAndRectangle(
         foundPoints++;
       }
     }
-    float x2 = line.base.x + (topRight.y - line.base.y) * line.direction.x / line.direction.y;
+    float x2 = line.base.x + ((float)topRight.y - (float)line.base.y) * line.direction.x / line.direction.y;
     if((x2 >= bottomLeft.x) && (x2 <= topRight.x) && (foundPoints < 2))
     {
       point[foundPoints].x = x2;
@@ -1081,7 +1081,7 @@ int Geometry::intersection(int a1, int b1, int a2, int b2, int value)
 {
   int result = 0 ;
   if(a2 - a1 != 0)
-    result = (int)(b1 + (float)(value - a1) / (a2 - a1) * (b2 - b1));
+    result = (int)((float)b1 + (float)(value - a1) / (float)(a2 - a1) * (float)(b2 - b1));
   else
     result = 32767;
   return(result);
@@ -1131,9 +1131,9 @@ bool Geometry::calculateBallInImage(const Vector2BH<>& ballOffset,
             bottom;
     calculatePointByAngles(Vector2BH<>(circle.center.x, yTop), cameraMatrix, cameraInfo, top);
     calculatePointByAngles(Vector2BH<>(circle.center.x, yBottom), cameraMatrix, cameraInfo, bottom);
-    circle.center.x = (top.x + bottom.x) / 2.0f;
-    circle.center.y = (top.y + bottom.y) / 2.0f;
-    circle.radius = (top - bottom).abs() / 2.0f;
+    circle.center.x = ((float)top.x + (float)bottom.x) / 2.0f;
+    circle.center.y = ((float)top.y + (float)bottom.y) / 2.0f;
+    circle.radius = (float)(top - bottom).abs() / 2.0f;
     return true;
   }
   else
@@ -1287,7 +1287,7 @@ int Geometry::calculateLineSize
   Vector2BH<int> pointOnField; //position on field, relative to robot
   if(Geometry::calculatePointOnField(xImg, yImg, cameraMatrix, cameraInfo, pointOnField))
   {
-    int distance = (int) sqrt(sqrBH(cameraMatrix.translation.z) + sqrBH(pointOnField.abs()));
+    int distance = (int) sqrt(sqrBH(cameraMatrix.translation.z) + sqrBH((float)pointOnField.abs()));
     return (int)Geometry::getSizeByDistance(cameraInfo, fieldLinesWidth, (float) distance);
   }
   else
@@ -1322,8 +1322,8 @@ bool Geometry::calculatePointOnHorizontalPlane(const Vector2BH<int>& pointInImag
         yFactor = cameraInfo.focalLengthInv;
 
   Vector3BH<>
-  vectorToCenter(1, float(cameraInfo.opticalCenter.x - pointInImage.x) * xFactor,
-                 float(cameraInfo.opticalCenter.y - pointInImage.y) * yFactor);
+  vectorToCenter(1, float((float)cameraInfo.opticalCenter.x - (float)pointInImage.x) * xFactor,
+                 float((float)cameraInfo.opticalCenter.y - (float)pointInImage.y) * yFactor);
 
   Vector3BH<> vectorToCenterWorld = cameraMatrix.rotation * vectorToCenter;
 

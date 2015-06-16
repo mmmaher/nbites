@@ -289,7 +289,7 @@ void BHWalkProvider::calculateNextJointsAndStiffnesses(
 
     for (int i = 0; i < JointDataBH::numOfJoints; i++)
     {
-        bh_sensors.currents[nb_joint_order[i]] = sensorCurrents[i];
+        bh_sensors.currents[nb_joint_order[i]] = (short int)sensorCurrents[i];
     }
 
     bh_sensors.data[SensorDataBH::gyroX] = sensorInertials.gyr_x();
@@ -334,7 +334,7 @@ void BHWalkProvider::calculateNextJointsAndStiffnesses(
             if (output.jointHardness.hardness[nb_joint_order[j]] == 0) {
                 chain_hardness.push_back(MotionConstants::NO_STIFFNESS);
             } else {
-                chain_hardness.push_back(output.jointHardness.hardness[nb_joint_order[j]] / 100.f);
+                chain_hardness.push_back((float)output.jointHardness.hardness[nb_joint_order[j]] / 100.f);
             }
 
         }

@@ -1668,7 +1668,7 @@ void WalkingEngine::repairPendulumParametersY(PendulumPhase& phase, const Pendul
 
     const float tanhKTl1 = -xv / (x * k);
     float x0 = 0.f;
-    float t0;
+    float t0 = 0.f;
     if(tanhKTl1 > -1.f && tanhKTl1 < 1.f)
     {
         const float kT = atanh(tanhKTl1);

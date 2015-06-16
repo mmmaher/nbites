@@ -25,13 +25,13 @@ void ImageCoordinateSystemBH::setCameraInfo(const CameraInfoBH& cameraInfo)
     return;
   xTable = new int[maxResolutionWidth];
   yTable = new int[maxResolutionHeight];
-  const float focalLength = cameraInfo.focalLength * maxResolutionWidth / cameraInfo.width;
+  const float focalLength = cameraInfo.focalLength * maxResolutionWidth / (float)cameraInfo.width;
   for(int i = 0; i < maxResolutionWidth; ++i)
-    xTable[i] = int(::atan((maxResolutionWidth / 2 - i) / focalLength) * 1024 + 0.5f);
+    xTable[i] = int(::atan((maxResolutionWidth / 2 - (float)i) / focalLength) * 1024 + 0.5f);
   for(int i = 0; i < maxResolutionHeight; ++i)
-    yTable[i] = int(::atan((i - maxResolutionHeight / 2) / focalLength) * 1024 + 0.5f);
+    yTable[i] = int(::atan(((float)i - maxResolutionHeight / 2) / focalLength) * 1024 + 0.5f);
   for(int i = -3072; i < 3072; ++i)
-    table[i + 3072] = int(::tan(i / 1024.0f) * focalLength + 0.5f);
+    table[i + 3072] = int(::tan((float)i / 1024.0f) * focalLength + 0.5f);
 }
 
 void ImageCoordinateSystemBH::draw() const
