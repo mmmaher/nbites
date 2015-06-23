@@ -6,25 +6,28 @@
 
 #include "Tools/ModuleBH/Module.h"
 #include "Representations/Infrastructure/Thumbnail.h"
-#include "Representations/Infrastructure/CameraInfo.h"
 
-MODULE(ThumbnailProvider)
-  REQUIRES(ImageBH)
-  REQUIRES(CameraInfoBH)
-  PROVIDES_WITH_OUTPUT_AND_DRAW(ThumbnailBH)
-  DEFINES_PARAMETER(unsigned int, downScales, 3)
-END_MODULE
+MODULE(ThumbnailProvider,
+{,
+  REQUIRES(ImageBH),
+  PROVIDES_WITH_OUTPUT(ThumbnailBH),
+  LOADS_PARAMETERS(
+  {,
+    (unsigned) downScales,
+    (bool) grayscale,
+  }),
+});
 
 class ThumbnailProvider : public ThumbnailProviderBase
 {
 public:
-  ThumbnailProvider();
-
   void update(ThumbnailBH& thumbnail);
 
 private:
   void shrinkNxN(const ImageBH& srcImage, ThumbnailBH::ThumbnailImage& destImage);
-
   void shrink8x8SSE(const ImageBH& srcImage, ThumbnailBH::ThumbnailImage& destImage);
   void shrink4x4SSE(const ImageBH& srcImage, ThumbnailBH::ThumbnailImage& destImage);
+  void shrinkGrayscaleNxN(const ImageBH& srcImage, ThumbnailBH::ThumbnailImageGrayscale& destImage);
+  void shrinkGrayscale8x8SSE(const ImageBH& srcImage, ThumbnailBH::ThumbnailImageGrayscale& destImage);
+  void shrinkGrayscale4x4SSE(const ImageBH& srcImage, ThumbnailBH::ThumbnailImageGrayscale& destImage);
 };

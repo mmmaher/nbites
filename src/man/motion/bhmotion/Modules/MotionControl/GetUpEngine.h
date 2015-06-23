@@ -9,6 +9,7 @@
 #include "Tools/Streams/InStreams.h"
 #include "Representations/MotionControl/GetUpEngineOutput.h"
 #include "Representations/MotionControl/MotionSelection.h"
+#include "Representations/MotionControl/MotionInfo.h"
 #include "Platform/File.h"
 #include "Representations/Infrastructure/FrameInfo.h"
 #include "Representations/Infrastructure/SensorData.h"
@@ -18,8 +19,7 @@
 #include <cstring>
 
 STREAMABLE(MofLine,
-{
-public: ,
+{,
   (float [2]) head,
   (float [4]) leftArm,
   (float [4]) rightArm,
@@ -33,35 +33,44 @@ STREAMABLE(Mof,
 {
 public:
   ENUM(Motion, //all motions defined in getUpEngine.cfg
-  front,
-  back,
-  recovering,
-  stand);
-  ,
+    front,
+    back,
+    recovering,
+    stand,
+    fromSumo,
+    fromSumoKeeper,
+    fromLiftBall
+  ),
+
   (Motion) name,
   (std::vector<MofLine>) lines,
   (int) balanceStartLine,
   (Pose2DBH) odometryOffset,
 });
 
-MODULE(GetUpEngine)
-REQUIRES(MotionSelectionBH)
-REQUIRES(FilteredJointDataBH)
-REQUIRES(FrameInfoBH)
-REQUIRES(FilteredSensorDataBH)
-REQUIRES(RobotDimensionsBH)
-REQUIRES(MassCalibrationBH)
-REQUIRES(FallDownStateBH)
-REQUIRES(GroundContactStateBH)
-PROVIDES_WITH_MODIFY(GetUpEngineOutputBH)
-LOADS_PARAMETER(int, maxNumOfUnsuccessfulTries)
-LOADS_PARAMETER(Mof[Mof::numOfMotions], mofs)
-END_MODULE
+MODULE(GetUpEngine,
+{,
+  REQUIRES(MotionSelectionBH),
+  REQUIRES(FilteredJointDataBH),
+  REQUIRES(FrameInfoBH),
+  REQUIRES(FilteredSensorDataBH),
+  REQUIRES(RobotDimensionsBH),
+  REQUIRES(MassCalibrationBH),
+  REQUIRES(FallDownStateBH),
+  REQUIRES(GroundContactStateBH),
+  USES(MotionInfoBH), // NEW TO BH WALK
+  PROVIDES_WITH_MODIFY(GetUpEngineOutputBH),
+  LOADS_PARAMETERS(
+  {,
+    (int) maxNumOfUnsuccessfulTries,
+    (Mof[Mof::numOfMotions]) mofs,
+  }),
+});
 
 class GetUpEngine : public GetUpEngineBase
 {
 private:
-  ENUM(EngineState, decideAction, startUp, working, breakUp, recover, pickUp, schwalbe);
+  ENUM(EngineState, decideAction, startUp, breakUp, recover, pickUp, schwalbe);
 
   EngineState state; // defines the current engine state
 
@@ -69,11 +78,13 @@ private:
        balance;   //toggles balance on or off
 
   int lineCounter, //the current key frame of the motion sequence
-       maxCounter, //the number of key frames of the current motion sequence 
+       maxCounter, //the number of key frames of the current motion sequence
        tryCounter, //the number of unsuccessful tries
        motionID;  //the index of the current motion (index in mofs)
 
   float ratio; //0-1 interpolation state between key frames
+
+  MotionInfoBH lastMotionInfo; //saves the last MotionInfo
 
   unsigned int lineStartTimeStamp,  //time stamp when a the interpolation between key frames started
                lastNotActiveTimeStamp, //time stamp of the last time the engine was not active
@@ -84,11 +95,11 @@ private:
   JointRequestBH lastUnbalanced, //calculated last target joint angles without balance added
                targetJoints;   //calculated next target joint angles without balance added
 
-  Pose2DBH internalOdometryOffset; //stores the next odometry offset 
+  Pose2DBH internalOdometryOffset; //stores the next odometry offset
   float kp, //pid factors
-        ki, 
-        kd, 
-        gBuffer, //buffer to summarize gyro data 
+        ki,
+        kd,
+        gBuffer, //buffer to summarize gyro data
         gLast; //stores last gyro data
 public:
 
@@ -113,9 +124,9 @@ public:
     gBuffer(0.f),
     gLast(0.f)
   {};
- 
+
   /**
-  * The method initializes the next motion based on the current engine state, 
+  * The method initializes the next motion based on the current engine state,
   * the FallDownStateBH and the measured body angle.
   * @param output the GetUpEngineOutputBH object for changing joint hardness
   */

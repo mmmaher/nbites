@@ -14,15 +14,17 @@
 #include "Representations/Sensing/GroundContactState.h"
 #include "Representations/MotionControl/OdometryData.h"
 
-MODULE(TorsoMatrixProvider)
-  REQUIRES(OrientationDataBH)
-  REQUIRES(RobotModelBH)
-  REQUIRES(RobotDimensionsBH)
-  REQUIRES(GroundContactStateBH)
-  PROVIDES_WITH_MODIFY(TorsoMatrixBH)
-  USES(TorsoMatrixBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(OdometryDataBH)
-END_MODULE
+
+MODULE(TorsoMatrixProvider,
+{,
+  REQUIRES(OrientationDataBH),
+  REQUIRES(RobotModelBH),
+  REQUIRES(RobotDimensionsBH),
+  REQUIRES(GroundContactStateBH),
+  PROVIDES_WITH_MODIFY(TorsoMatrixBH),
+  USES(TorsoMatrixBH),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(OdometryDataBH),
+});
 
 /**
 * @class TorsoMatrixProvider

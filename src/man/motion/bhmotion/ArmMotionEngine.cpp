@@ -72,9 +72,9 @@ void ArmMotionEngine::updateArm(Arm& arm, ArmMotionEngineOutputBH& armMotionEngi
         theFilteredJointDataBH);
 
     } else if(theFrameInfoBH.getTimeSince(arm.lastContactAction) > actionDelay &&
-      (arm.id == ArmMotionRequestBH::left ? theArmContactModelBH.contactLeft : theArmContactModelBH.contactRight))
+            (arm.id == ArmMotionRequestBH::left ? theArmContactModelBH.contactLeft : theArmContactModelBH.contactRight) &&
+            SystemCall::getMode() != SystemCall::simulatedRobot)
     {
-#ifdef TARGET_ROBOT
       // check for armcontact
       ArmContactModelBH::PushDirection dir = (arm.id == ArmMotionRequestBH::left)
         ? theArmContactModelBH.pushDirectionLeft
@@ -92,7 +92,6 @@ void ArmMotionEngine::updateArm(Arm& arm, ArmMotionEngineOutputBH& armMotionEngi
       default:
         break;
       }
-#endif
     }
   }
 
@@ -107,7 +106,7 @@ void ArmMotionEngine::updateArm(Arm& arm, ArmMotionEngineOutputBH& armMotionEngi
     // fallen
     return;
   }
-  else if(theMotionInfoBH.motion == MotionInfoBH::bike && arm.isMotionActive && arm.currentMotion.id != ArmMotionRequestBH::useDefault)
+  else if(theMotionInfoBH.motion == MotionInfoBH::kick && arm.isMotionActive && arm.currentMotion.id != ArmMotionRequestBH::useDefault)
   {
     arm.startMotion(allMotions[ArmMotionRequestBH::useDefault], true, false, 0, theFilteredJointDataBH);
   }
@@ -116,7 +115,6 @@ void ArmMotionEngine::updateArm(Arm& arm, ArmMotionEngineOutputBH& armMotionEngi
   if(arm.isMotionActive)
   {
     // a motion is active, so decide what to do
-
     if(arm.stateIndex == arm.currentMotion.states.size())
     {
       // arm reached its motion target

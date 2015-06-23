@@ -17,22 +17,31 @@
 #include "Tools/MessageQueue/InMessage.h"
 #include "ArmMotion.h"
 
-MODULE(ArmMotionEngine)
-  USES(MotionInfoBH)
-  REQUIRES(ArmMotionRequestBH)
-  REQUIRES(FrameInfoBH)
-  REQUIRES(GameInfoBH)
-  REQUIRES(RobotInfoBH)
-  REQUIRES(ArmContactModelBH)
-  REQUIRES(FilteredJointDataBH)
-  REQUIRES(HardnessSettingsBH)
-  REQUIRES(FallDownStateBH)
-  REQUIRES(GroundContactStateBH)
-  PROVIDES_WITH_MODIFY(ArmMotionEngineOutputBH)
-  DEFINES_PARAMETER(int, actionDelay, 3000);                    /**< delay in ms after which arm contact triggered motions can be started again. */
-  DEFINES_PARAMETER(int, targetTime , 1000);                     /**< time of how long arm stays in target position for contact triggered motions */
-  DEFINES_PARAMETER(std::vector<ArmMotion>, allMotions, std::vector<ArmMotion>());  /**< contains the existing arm motions */
-END_MODULE
+
+MODULE(ArmMotionEngine,
+{,
+  USES(MotionInfoBH),
+  REQUIRES(ArmMotionRequestBH),
+  REQUIRES(FrameInfoBH),
+  REQUIRES(GameInfoBH),
+  REQUIRES(RobotInfoBH),
+  REQUIRES(ArmContactModelBH),
+  REQUIRES(FilteredJointDataBH),
+  REQUIRES(HardnessSettingsBH),
+  REQUIRES(FallDownStateBH),
+  REQUIRES(GroundContactStateBH),
+  PROVIDES_WITH_MODIFY(ArmMotionEngineOutputBH),
+  LOADS_PARAMETERS(
+  {,
+    (int) actionDelay,                    /**< delay in ms after which arm contact triggered motions can be started again. */
+    (int) targetTime,                     /**< time of how long arm stays in target position for contact triggered motions */
+    (std::vector<ArmMotion>) allMotions,  /**< contains the existing arm motions */
+  }),
+});
+
+  // DEFINES_PARAMETER(int, actionDelay, 3000);                    /**< delay in ms after which arm contact triggered motions can be started again. */
+  // DEFINES_PARAMETER(int, targetTime , 1000);                     /**< time of how long arm stays in target position for contact triggered motions */
+  // DEFINES_PARAMETER(std::vector<ArmMotion>, allMotions, std::vector<ArmMotion>());  /**< contains the existing arm motions */
 
 /**
 * ModuleBH which provides SpecialAction style arm motions which can be
@@ -71,8 +80,9 @@ private:
     ArmMotion currentMotion;   /**< The motion which is currently performed by this arm. Contains the actual target states in order they should be reached */
 
     Arm(ArmMotionRequestBH::Arm id = ArmMotionRequestBH::left, int firstJoint = 2) :
-      id(id), firstJoint(firstJoint) , stateIndex(0), interpolationTime(0), isMotionActive(false), targetTime(0),
-      lastContactAction(0) {}
+      id(id), firstJoint(firstJoint) , stateIndex(0), interpolationTime(0), targetTime(0),
+      lastContactAction(0), isMotionActive(false)
+      {}
 
     /**
      * Resets fields in this instance to start a new motion. The current joint information
@@ -99,8 +109,6 @@ private:
         interpolationStart.angles[i] = currentJoints.angles[firstJoint + i];
       }
     }
-
-
   };
 
   Arm arms[2];                     /**< There are two arms :) */

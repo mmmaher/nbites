@@ -9,10 +9,11 @@
 #include "Tools/Module/Module.h"
 #include "Representations/Infrastructure/JointData.h"
 
-MODULE(JointFilter)
-  REQUIRES(JointDataBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredJointDataBH)
-END_MODULE
+MODULE(JointFilter,
+{,
+  REQUIRES(JointDataBH),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredJointDataBH),
+});
 
 /**
 * @class JointFilter

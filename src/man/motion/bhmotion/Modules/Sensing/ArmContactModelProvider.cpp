@@ -1,5 +1,5 @@
 /**
-* @file ArmContactModelProvider.h
+* @file ArmContactModelProvider.cpp
 *
 * Implementation of class ArmContactModelProvider.
 * @author <a href="mailto:fynn@informatik.uni-bremen.de">Fynn Feldpausch</a>
@@ -8,7 +8,6 @@
 */
 
 #include "Tools/Debugging/DebugDrawings.h"
-#include "Tools/Math/Common.h"
 #include "ArmContactModelProvider.h"
 #include <sstream>
 #include <cmath>
@@ -39,12 +38,12 @@ void ArmContactModelProvider::checkArm(bool left, float factor)
 
   if(left)
   {
-    ARROW("module:ArmContactModelProvider:armContact", 0, 0, -(toDegrees(retVal.y) * SCALE), toDegrees(retVal.x) * SCALE, 20, Drawings::ps_solid, ColorClasses::blue);
+    ARROW("module:ArmContactModelProvider:armContact", 0, 0, -(toDegrees(retVal.y) * SCALE), toDegrees(retVal.x) * SCALE, 20, Drawings::ps_solid, ColorRGBA::blue);
     leftErrorBuffer.add(retVal);
   }
   else
   {
-    ARROW("module:ArmContactModelProvider:armContact", 0, 0, (toDegrees(retVal.y) * SCALE), toDegrees(retVal.x) * SCALE, 20, Drawings::ps_solid, ColorClasses::blue);
+    ARROW("module:ArmContactModelProvider:armContact", 0, 0, (toDegrees(retVal.y) * SCALE), toDegrees(retVal.x) * SCALE, 20, Drawings::ps_solid, ColorRGBA::blue);
     rightErrorBuffer.add(retVal);
   }
 }
@@ -73,13 +72,13 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
 
   DECLARE_DEBUG_DRAWING("module:ArmContactModelProvider:armContact", "drawingOnField");
 
-	// If in INITIAL or FINISHED, or we are penalized, we reset all buffered errors and detect no arm contacts
-	if (theGameInfoBH.state == STATE_INITIAL || theGameInfoBH.state == STATE_FINISHED ||
+  // If in INITIAL or FINISHED, or we are penalized, we reset all buffered errors and detect no arm contacts
+  if (theGameInfoBH.state == STATE_INITIAL || theGameInfoBH.state == STATE_FINISHED ||
     theFallDownStateBH.state == FallDownStateBH::onGround ||
     theFallDownStateBH.state == FallDownStateBH::falling ||
     theMotionInfoBH.motion == MotionRequestBH::getUp ||
     theMotionInfoBH.motion == MotionRequestBH::specialAction ||
-    theMotionInfoBH.motion == MotionRequestBH::bike ||
+    theMotionInfoBH.motion == MotionRequestBH::kick ||
     !theGroundContactStateBH.contact ||
     (theRobotInfoBH.penalty != PENALTY_NONE && !detectWhilePenalized))
   {
@@ -106,18 +105,18 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
 
 
   // clear on game state changes
-  if (lastGameState != theGameInfoBH.state)
+  if(lastGameState != theGameInfoBH.state)
   {
     resetAll(model);
   }
   lastGameState = theGameInfoBH.state;
 
-  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 200, 30, Drawings::ps_solid, ColorClasses::blue, Drawings::ps_null, ColorClasses::blue);
-  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 400, 30, Drawings::ps_solid, ColorClasses::blue, Drawings::ps_null, ColorClasses::blue);
-  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 600, 30, Drawings::ps_solid, ColorClasses::blue, Drawings::ps_null, ColorClasses::blue);
-  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 800, 30, Drawings::ps_solid, ColorClasses::blue, Drawings::ps_null, ColorClasses::blue);
-  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 1000, 30, Drawings::ps_solid, ColorClasses::blue, Drawings::ps_null, ColorClasses::blue);
-  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 1200, 30, Drawings::ps_solid, ColorClasses::blue, Drawings::ps_null, ColorClasses::blue);
+  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 200, 30, Drawings::ps_solid, ColorRGBA::blue, Drawings::ps_null, ColorRGBA::blue);
+  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 400, 30, Drawings::ps_solid, ColorRGBA::blue, Drawings::ps_null, ColorRGBA::blue);
+  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 600, 30, Drawings::ps_solid, ColorRGBA::blue, Drawings::ps_null, ColorRGBA::blue);
+  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 800, 30, Drawings::ps_solid, ColorRGBA::blue, Drawings::ps_null, ColorRGBA::blue);
+  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 1000, 30, Drawings::ps_solid, ColorRGBA::blue, Drawings::ps_null, ColorRGBA::blue);
+  CIRCLE("module:ArmContactModelProvider:armContact", 0, 0, 1200, 30, Drawings::ps_solid, ColorRGBA::blue, Drawings::ps_null, ColorRGBA::blue);
 
 
   /* Buffer arm angles */
@@ -137,7 +136,6 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
      (theFallDownStateBH.state == FallDownStateBH::upright || theFallDownStateBH.state == FallDownStateBH::staggering) &&
      angleBuffer.isFilled())
   {
-
     const float leftFactor = calculateCorrectionFactor(theRobotModelBH.limbs[MassCalibrationBH::foreArmLeft], odometryOffset, lastLeftHandPos);
     const float rightFactor = calculateCorrectionFactor(theRobotModelBH.limbs[MassCalibrationBH::foreArmRight], odometryOffset, lastRightHandPos);
 
@@ -156,7 +154,6 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
 
     const Vector2f left = leftErrorBuffer.getAverageFloat();
     const Vector2f right = rightErrorBuffer.getAverageFloat();
-
 
     //Determine if we are being pushed or not. Can only be true if last arm movement long enough ago
     bool leftX  = leftValid && fabs(left.x) > fromDegrees(errorXThreshold);
@@ -182,7 +179,6 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
 
     model.contactLeft &= model.durationLeft < malfunctionThreshold;
     model.contactRight &= model.durationRight < malfunctionThreshold;
-
 
     if(model.contactLeft)
     {
@@ -210,30 +206,30 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
     PLOT("module:ArmContactModelProvider:contactLeft",        model.contactLeft ? 10.0 : 0.0);
     PLOT("module:ArmContactModelProvider:contactRight",       model.contactRight ? 10.0 : 0.0);
 
-    ARROW("module:ArmContactModelProvider:armContact", 0, 0, -(toDegrees(left.y) * SCALE), toDegrees(left.x) * SCALE, 20, Drawings::ps_solid, ColorClasses::green);
-    ARROW("module:ArmContactModelProvider:armContact", 0, 0, toDegrees(right.y) * SCALE, toDegrees(right.x) * SCALE, 20, Drawings::ps_solid, ColorClasses::red);
+    ARROW("module:ArmContactModelProvider:armContact", 0, 0, -(toDegrees(left.y) * SCALE), toDegrees(left.x) * SCALE, 20, Drawings::ps_solid, ColorRGBA::green);
+    ARROW("module:ArmContactModelProvider:armContact", 0, 0, toDegrees(right.y) * SCALE, toDegrees(right.x) * SCALE, 20, Drawings::ps_solid, ColorRGBA::red);
 
     COMPLEX_DRAWING("module:ArmContactModelProvider:armContact",
     {
-      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 1300, 200, ColorClasses::black, "LEFT");
-      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 1100, 200, ColorClasses::black, "ErrorX: " << toDegrees(left.x));
-      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 900, 200, ColorClasses::black,  "ErrorY: " << toDegrees(left.y));
-      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 500, 200, ColorClasses::black,  ArmContactModelBH::getName(model.pushDirectionLeft));
-      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 300, 200, ColorClasses::black,  "Time: " << model.timeOfLastContactLeft);
+      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 1300, 200, ColorRGBA::black, "LEFT");
+      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 1100, 200, ColorRGBA::black, "ErrorX: " << toDegrees(left.x));
+      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 900, 200, ColorRGBA::black,  "ErrorY: " << toDegrees(left.y));
+      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 500, 200, ColorRGBA::black,  ArmContactModelBH::getName(model.pushDirectionLeft));
+      DRAWTEXT("module:ArmContactModelProvider:armContact", -2300, 300, 200, ColorRGBA::black,  "Time: " << model.timeOfLastContactLeft);
 
-      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 1300, 200, ColorClasses::black, "RIGHT");
-      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 1100, 200, ColorClasses::black, "ErrorX: " << toDegrees(right.x));
-      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 900, 200, ColorClasses::black,  "ErrorY: " << toDegrees(right.y));
-      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 500, 200, ColorClasses::black,  ArmContactModelBH::getName(model.pushDirectionRight));
-      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 300, 200, ColorClasses::black,  "Time: " << model.timeOfLastContactRight);
+      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 1300, 200, ColorRGBA::black, "RIGHT");
+      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 1100, 200, ColorRGBA::black, "ErrorX: " << toDegrees(right.x));
+      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 900, 200, ColorRGBA::black,  "ErrorY: " << toDegrees(right.y));
+      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 500, 200, ColorRGBA::black,  ArmContactModelBH::getName(model.pushDirectionRight));
+      DRAWTEXT("module:ArmContactModelProvider:armContact", 1300, 300, 200, ColorRGBA::black,  "Time: " << model.timeOfLastContactRight);
 
-      if (model.contactLeft)
+      if(model.contactLeft)
       {
-        CROSS("module:ArmContactModelProvider:armContact", -2000, 0, 100, 20, Drawings::ps_solid, ColorClasses::red);
+        CROSS("module:ArmContactModelProvider:armContact", -2000, 0, 100, 20, Drawings::ps_solid, ColorRGBA::red);
       }
-      if (model.contactRight)
+      if(model.contactRight)
       {
-        CROSS("module:ArmContactModelProvider:armContact", 2000, 0, 100, 20, Drawings::ps_solid, ColorClasses::red);
+        CROSS("module:ArmContactModelProvider:armContact", 2000, 0, 100, 20, Drawings::ps_solid, ColorRGBA::red);
       }
   });
 
@@ -242,11 +238,10 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
       (model.contactLeft || model.contactRight))
     {
       lastSoundTime = theFrameInfoBH.time;
-#ifdef TARGET_ROBOT
-      SystemCall::playSound("arm.wav");
-#else
-      OUTPUT(idText, text, (model.contactLeft ? "Left" : "") << (model.contactRight ? "Right" : "") << " arm!");
-#endif
+      if(SystemCall::getMode() == SystemCall::physicalRobot)
+        SystemCall::playSound("arm.wav");
+      else
+        OUTPUT(idText, text, (model.contactLeft ? "Left" : "") << (model.contactRight ? "Right" : "") << " arm!");
     }
 
   }
@@ -256,34 +251,34 @@ void ArmContactModelProvider::update(ArmContactModelBH& model)
 ArmContactModelBH::PushDirection ArmContactModelProvider::getDirection(bool left, bool contactX, bool contactY, Vector2f error)
 {
   // for the left arm, y directions are mirrored!
-  if (left)
+  if(left)
   {
     error = Vector2f(error.x, -error.y);
   }
 
   ArmContactModelBH::PushDirection result = ArmContactModelBH::NONE;
-  if (contactX && contactY)
+  if(contactX && contactY)
   {
-    if (error.x > 0.0 && error.y < 0.0f)
+    if(error.x > 0.0 && error.y < 0.0f)
     {
       result = ArmContactModelBH::NW;
     }
-    else if (error.x > 0.0 && error.y > 0.0)
+    else if(error.x > 0.0 && error.y > 0.0)
     {
       result = ArmContactModelBH::NE;
     }
-    if (error.x < 0.0 && error.y < 0.0f)
+    if(error.x < 0.0 && error.y < 0.0f)
     {
       result = ArmContactModelBH::SW;
     }
-    else if (error.x < 0.0 && error.y > 0.0)
+    else if(error.x < 0.0 && error.y > 0.0)
     {
       result = ArmContactModelBH::SE;
     }
   }
-  else if (contactX)
+  else if(contactX)
   {
-    if (error.x < 0.0)
+    if(error.x < 0.0)
     {
       result = ArmContactModelBH::S;
     }
@@ -292,7 +287,7 @@ ArmContactModelBH::PushDirection ArmContactModelProvider::getDirection(bool left
       result = ArmContactModelBH::N;
     }
   }
-  else if (contactY)
+  else if(contactY)
   {
     if (error.y < 0.0)
     {
@@ -310,8 +305,6 @@ ArmContactModelBH::PushDirection ArmContactModelProvider::getDirection(bool left
 
   return result;
 }
-
-
 
 float ArmContactModelProvider::calculateCorrectionFactor(const Pose3DBH foreArm, const Pose2DBH odometryOffset, Vector2BH<> &lastArmPos)
 {

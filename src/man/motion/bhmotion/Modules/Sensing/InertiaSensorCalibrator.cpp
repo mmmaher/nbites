@@ -65,7 +65,7 @@ void InertiaSensorCalibrator::update(InertiaSensorDataBH& inertiaSensorData)
 
   const Vector2BH<> gyro = Vector2BH<>(theSensorDataBH.data[SensorDataBH::gyroX], theSensorDataBH.data[SensorDataBH::gyroY]);
   const Vector3BH<> acc = Vector3BH<>(theSensorDataBH.data[SensorDataBH::accX], theSensorDataBH.data[SensorDataBH::accY], theSensorDataBH.data[SensorDataBH::accZ]);
- 
+
   // it's prediction time!
   if(lastTime && calibrated)
   {
@@ -158,7 +158,7 @@ void InertiaSensorCalibrator::update(InertiaSensorDataBH& inertiaSensorData)
           accZBias.update(collection.accAvg.z, sqrBH(accBiasMeasurementNoise.z));
           gyroXBias.update(collection.gyroAvg.x, sqrBH(gyroBiasMeasurementNoise.x));
           gyroYBias.update(collection.gyroAvg.y, sqrBH(gyroBiasMeasurementNoise.y));
-        }        
+        }
       }
       collections.removeFirst();
     }
@@ -227,7 +227,6 @@ void InertiaSensorCalibrator::update(InertiaSensorDataBH& inertiaSensorData)
     inertiaSensorData.acc.y *= theSensorCalibrationBH.accYGain;
     inertiaSensorData.acc.z *= theSensorCalibrationBH.accZGain;
   }
-
 
   MODIFY("module:InertiaSensorCalibrator:calibrated", calibrated);
   MODIFY("module:InertiaSensorCalibrator:gyroXBias", gyroXBias.value);

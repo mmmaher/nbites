@@ -21,13 +21,15 @@ FootContactModelProvider::FootContactModelProvider():
 void FootContactModelProvider::update(FootContactModelBH& model)
 {
   // Check, if any bumper is pressed
-  bool leftFootLeft = !theDamageConfigurationBH.leftFootBumperDefect && checkContact(KeyStatesBH::leftFootLeft, leftFootLeftDuration);
-  bool leftFootRight = !theDamageConfigurationBH.leftFootBumperDefect && checkContact(KeyStatesBH::leftFootRight, leftFootRightDuration);
-  bool rightFootLeft = !theDamageConfigurationBH.rightFootBumperDefect &&  checkContact(KeyStatesBH::rightFootLeft, rightFootLeftDuration);
-  bool rightFootRight = !theDamageConfigurationBH.rightFootBumperDefect && checkContact(KeyStatesBH::rightFootRight, rightFootRightDuration);
+  const bool leftFootLeft = !theDamageConfigurationBH.leftFootBumperDefect && checkContact(KeyStatesBH::leftFootLeft, leftFootLeftDuration);
+  const bool leftFootRight = !theDamageConfigurationBH.leftFootBumperDefect && checkContact(KeyStatesBH::leftFootRight, leftFootRightDuration);
+  const bool rightFootLeft = !theDamageConfigurationBH.rightFootBumperDefect &&  checkContact(KeyStatesBH::rightFootLeft, rightFootLeftDuration);
+  const bool rightFootRight = !theDamageConfigurationBH.rightFootBumperDefect && checkContact(KeyStatesBH::rightFootRight, rightFootRightDuration);
+  const bool contactLeftFoot = leftFootLeft || leftFootRight;
+  const bool contactRightFoot = rightFootLeft || rightFootRight;
 
   // Update statistics
-  if (leftFootLeft || leftFootRight)
+  if(contactLeftFoot)
   {
     contactBufferLeft.add(1);
     contactDurationLeft++;
@@ -37,7 +39,7 @@ void FootContactModelProvider::update(FootContactModelBH& model)
     contactBufferLeft.add(0);
     contactDurationLeft = 0;
   }
-  if (rightFootLeft || rightFootRight)
+  if(contactRightFoot)
   {
     contactBufferRight.add(1);
     contactDurationRight++;
@@ -57,7 +59,8 @@ void FootContactModelProvider::update(FootContactModelBH& model)
     {
       model.contactLeft = true;
       model.contactDurationLeft = contactDurationLeft;
-      model.lastContactLeft = theFrameInfoBH.time;
+      if(contactLeftFoot)
+        model.lastContactLeft = theFrameInfoBH.time;
     }
     else
     {
@@ -68,7 +71,8 @@ void FootContactModelProvider::update(FootContactModelBH& model)
     {
       model.contactRight = true;
       model.contactDurationRight = contactDurationRight;
-      model.lastContactRight = theFrameInfoBH.time;
+      if(contactRightFoot)
+        model.lastContactRight = theFrameInfoBH.time;
     }
     else
     {
@@ -82,6 +86,15 @@ void FootContactModelProvider::update(FootContactModelBH& model)
     model.contactRight = false;
     model.contactDurationLeft = 0;
     model.contactDurationRight = 0;
+  }
+
+  // Debugging stuff:
+
+  if(debug && theFrameInfoBH.getTimeSince(lastSoundTime) > (int) soundDelay &&
+    (model.contactLeft || model.contactRight))
+  {
+    lastSoundTime = theFrameInfoBH.time;
+    SystemCall::playSound("doh.wav");
   }
 
   DECLARE_PLOT("module:FootContactModelProvider:sumLeft");

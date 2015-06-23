@@ -15,13 +15,13 @@
 #include "Representations/Infrastructure/JointData.h"
 
 
-MODULE(RobotModelProvider)
-  REQUIRES(RobotDimensionsBH)
-  REQUIRES(FilteredJointDataBH)
-  REQUIRES(MassCalibrationBH)
-  PROVIDES_WITH_MODIFY_AND_DRAW(RobotModelBH)
-END_MODULE
-
+MODULE(RobotModelProvider,
+{,
+  REQUIRES(RobotDimensionsBH),
+  REQUIRES(FilteredJointDataBH),
+  REQUIRES(MassCalibrationBH),
+  PROVIDES_WITH_MODIFY_AND_DRAW(RobotModelBH),
+});
 
 /**
 * @class RobotModelProvider

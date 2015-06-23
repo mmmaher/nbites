@@ -4,18 +4,20 @@
  * @author Colin Graf
  */
 
-#pragma once
+// #pragma once
 
-#include "Tools/Streams/AutoStreamable.h"
+// #include "Tools/Streams/AutoStreamable.h"
 
 /**
  * A parameter set to separate a phase in three arbitrary parts
  */
-STREAMABLE(SubPhaseParameters,
-{
-public:
-  SubPhaseParameters(float s, float d) { start = s; duration = d; }
-,
-  (float)(0) start, /**< The start position of the second sub phase */
-  (float)(1) duration, /**< The length of the second sub phase */
-});
+// STREAMABLE(SubPhaseParameters,
+// {
+// public:
+//   SubPhaseParameters(float s, float d) { start = s; duration = d; }
+// ,
+//   (float)(0) start, /**< The start position of the second sub phase */
+//   (float)(1) duration, /**< The length of the second sub phase */
+// });
+
+// FILE NO LONGER EXISTS IN NEW BHUMAN WALK SYSTEM
