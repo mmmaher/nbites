@@ -16,8 +16,8 @@ public class Y8image extends ImageParent {
 		BufferedImage ret = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 		for (int r = 0; r < height; ++r) {
 			for (int c = 0; c < width; ++c) {
-				
-				int y = (data[r * width + c]) & 0xFF;				
+
+				int y = (data[r * width + c]) & 0xFF;
 				Color color = new Color(y, y, y);
 				ret.setRGB(c, r, color.getRGB());
 			}
