@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import nbtool.util.Logger;
 import nbtool.data.Log;
+import nbtool.data.SExpr;
 import nbtool.gui.logviews.misc.ViewParent;
 import nbtool.images.EdgeImage;
 import nbtool.io.CommonIO.IOFirstResponder;
@@ -72,9 +73,23 @@ public class LineView extends ViewParent implements IOFirstResponder {
 
         assert(ci.tryAddCall(cc));
 
-        // TODO: Don't hard code SExpr paths
-        width =  newlog.tree().get(4).get(1).get(5).get(1).valueAsInt() / 2;
-        height = newlog.tree().get(4).get(1).get(6).get(1).valueAsInt() / 2;
+        Vector<SExpr> vec = newlog.tree().recursiveFind("width");
+        if (vec.size() > 0) {
+            SExpr w = vec.get(vec.size()-1);
+            width =  w.get(1).valueAsInt() / 2;
+        } else {
+            System.out.printf("COULD NOT READ WIDTH FROM LOG DESC\n");
+            width = 320;
+        }
+
+        vec = newlog.tree().recursiveFind("height");
+        if (vec.size() > 0) {
+            SExpr h = vec.get(vec.size()-1);
+            height = h.get(1).valueAsInt() / 2;
+        } else {
+            System.out.printf("COULD NOT READ HEIGHT FROM LOG DESC\n");
+            height = 240;
+        }
 
         displayw = width*2;
         displayh = height*2;
@@ -161,21 +176,25 @@ public class LineView extends ViewParent implements IOFirstResponder {
                 y2 = (int) Math.round(y0 + 3*fcEP1 * Math.cos(fcT));
 
                 // Scale down if a line is outside the view, but not if its too far (false field line)
-                if (y1 < 0 && y1 > -2500) {
+                if (y1 < 0 && y1 > -2000) {
                     resize = Math.min(resize, (double)fieldh/(-y1 + fieldh));
                 }
-                if (y2 < 0 && y2 > -2500) {
+                if (y2 < 0 && y2 > -2000) {
                     resize = Math.min(resize, (double)fieldh/(-y2 + fieldh));
                 }
 
-                // Don't draw it if it's way out
-                if (y1 < -3500) {
-                    lines.set(i+4, -1.0);
-                }
-                if (y2 < -3500) {
-                    lines.set(i+4, -1.0);
-                }
+                // // TODO: Don't draw it if it's way out
+                // if (y1 < -3500) {
+                //     lines.set(i+4, -1.0);
+                // }
+                // if (y2 < -3500) {
+                //     lines.set(i+4, -1.0);
+                // }
             }
+            /*
+                std::cout << "Width: " << width << " Height: " << height << std::endl;
+            
+            */
 
             // Loop through again to draw lines in field space with calucluated resize value
             for (int i = 0; i < lines.size(); i += 10) {
@@ -279,6 +298,7 @@ public class LineView extends ViewParent implements IOFirstResponder {
         repaint();
 
         // TODO refactor. Protobuff?
+        lines = new Vector<Double>();
         byte[] lineBytes = out[6].bytes;
         int numLines = lineBytes.length / (18 * 4);
         Logger.logf(Logger.INFO, "%d field lines expected.", numLines);
@@ -302,8 +322,8 @@ public class LineView extends ViewParent implements IOFirstResponder {
         }
     }
 
-	@Override
-	public boolean ioMayRespondOnCenterThread(IOInstance inst) {
-		return false;
-	}
+    @Override
+    public boolean ioMayRespondOnCenterThread(IOInstance inst) {
+        return false;
+    }
 }

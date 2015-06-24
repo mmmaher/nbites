@@ -167,6 +167,10 @@ public class Log {
 			return cs.valueAsInt();
 		else return null;
 	}
+	//what is this attribute going to return?
+	//public String protoRobotLocation() {
+		//return getAttributes().get("proto-RobotLocation");
+	//}
 	
 	public Integer version() {
 		SExpr v = tree().find(LOG_VERSION_S).get(1);
@@ -252,6 +256,7 @@ public class Log {
 		if (item.isAtom())
 			return null;
 		
+
 		SExpr bytes = item.find(CONTENT_NBYTES_S).get(1);
 		return bytes.exists() && bytes.isAtom() ? bytes.valueAsInt() : null;
 	}
@@ -276,6 +281,7 @@ public class Log {
 	public byte[] bytesForContentItem(int index) {
 		Integer offset = contentOffset(index);
 		Integer total = contentNumBytes(index);
+
 		if (offset == null || total == null)
 			return null;
 		

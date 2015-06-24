@@ -13,11 +13,6 @@ public class EdgeImage extends ImageParent {
 		super(w, h, d);
 	}
 
-	@Override
-	public int pixelSize() {
-		return -1;
-	}
-
 	private static final Color[] angleMap = initColorMap();
 
 	private static Color[] initColorMap(){
@@ -82,6 +77,7 @@ public class EdgeImage extends ImageParent {
 				Color base = angleMap[ang];
 				ret.setRGB(x, y, base.getRGB());
 			}
+
 		} catch (Exception e) {
 			Logger.logf(Logger.ERROR, "Conversion from bytes to EdgeImage to BufferedImage failed.");
 			e.printStackTrace();

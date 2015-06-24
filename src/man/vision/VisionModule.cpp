@@ -7,50 +7,58 @@
 
 #include <fstream>
 #include <iostream>
+#include <fstream>
+#include <chrono>
+
+#include "Profiler.h"
+#include "DebugConfig.h"
+//#include "PostDetector.h"
 
 namespace man {
 namespace vision {
 
-VisionModule::VisionModule(int wd, int ht)
+VisionModule::VisionModule(int wd, int ht, std::string robotName)
     : Module(),
       topIn(),
       bottomIn(),
       jointsIn(),
-      linesOut(base())
+      linesOut(base()),
+      ballOut(base()),
+      ballOn(false),
+      ballOnCount(0),
+      ballOffCount(0)
 {
-    // NOTE Constructed on heap because some of the objects below do
-    //      not have default constructors, all class members must be initialized
-    //      after the initializer list is run, which requires calling default
-    //      constructors in the case of C-style arrays, limitation theoretically
-
-    //      removed in C++11
-
-    std:: string colorPath, cameraPath;
+    std:: string colorPath, calibrationPath;
     #ifdef OFFLINE
-        colorPath =  cameraPath = std::string(getenv("NBITES_DIR"));
+        colorPath =  calibrationPath = std::string(getenv("NBITES_DIR"));
         colorPath += "/src/man/config/colorParams.txt";
-        cameraPath += "/src/man/config/cameraParams.txt";
+        calibrationPath += "/src/man/config/calibrationParams.txt";
     #else
         colorPath = "/home/nao/nbites/Config/colorParams.txt";
-        cameraPath = "/home/nao/nbites/Config/cameraParams.txt";
+        calibrationPath = "/home/nao/nbites/Config/calibrationParams.txt";
     #endif
 
     // Get SExpr from string
     nblog::SExpr* colors = nblog::SExpr::read(getStringFromTxtFile(colorPath));
-    cameraLisp = nblog::SExpr::read(getStringFromTxtFile(cameraPath));
-
+    calibrationLisp = nblog::SExpr::read(getStringFromTxtFile(calibrationPath));
 
     // Set module pointers for top then bottom images
+    // NOTE Constructed on heap because some of the objects below do
+    //      not have default constructors, all class members must be initialized
+    //      after the initializer list is run, which requires calling default
+    //      constructors in the case of C-style arrays, limitation theoretically
+    //      removed in C++11.
     for (int i = 0; i < 2; i++) {
         colorParams[i] = getColorsFromLisp(colors, i);
         frontEnd[i] = new ImageFrontEnd();
         edgeDetector[i] = new EdgeDetector();
         edges[i] = new EdgeList(32000);
         houghLines[i] = new HoughLineList(128);
-        cameraParams[i] = new CameraParams();
+        calibrationParams[i] = new CalibrationParams();
         kinematics[i] = new Kinematics(i == 0);
-        homography[i] = new FieldHomography();
+        homography[i] = new FieldHomography(i == 0);
         fieldLines[i] = new FieldLineList();
+        ballDetector[i] = new BallDetector(homography[i], i == 0);
         boxDetector[i] = new GoalboxDetector();
 
         if (i == 0) {
@@ -66,6 +74,7 @@ VisionModule::VisionModule(int wd, int ht)
         edgeDetector[i]->fast(fast);
         hough[i]->fast(fast);
     }
+    setCalibrationParams(robotName);
 }
 
 VisionModule::~VisionModule()
@@ -77,6 +86,7 @@ VisionModule::~VisionModule()
         delete edges[i];
         delete houghLines[i];
         delete hough[i];
+        delete calibrationParams[i];
         delete kinematics[i];
         delete homography[i];
         delete fieldLines[i];
@@ -92,15 +102,10 @@ void VisionModule::run_()
     jointsIn.latch();
     inertsIn.latch();
 
-    // std::cout << "RN: " << robotName_ << "\n"; 
     // Setup
     std::vector<const messages::YUVImage*> images { &topIn.message(),
                                                     &bottomIn.message() };
-
-    // Time vision module
-    // double topTimes[6];
-    // double bottomTimes[6];
-    // double* times[2] = { topTimes, bottomTimes };
+    bool ballDetected = false;
 
     // Loop over top and bottom image and run line detection system
     for (int i = 0; i < images.size(); i++) {
@@ -113,78 +118,76 @@ void VisionModule::run_()
                         image->rowPitch(),
                         image->pixelAddress(0, 0));
 
-        // HighResTimer timer;
-
         // Run front end
         frontEnd[i]->run(yuvLite, colorParams[i]);
         ImageLiteU16 yImage(frontEnd[i]->yImage());
         ImageLiteU8 greenImage(frontEnd[i]->greenImage());
-
-        // times[i][0] = timer.end();
+        ImageLiteU8 orangeImage(frontEnd[i]->orangeImage());
 
         // Calculate kinematics and adjust homography
         if (jointsIn.message().has_head_yaw()) {
             kinematics[i]->joints(jointsIn.message());
+            homography[i]->wx0(kinematics[i]->wx0());
+            homography[i]->wy0(kinematics[i]->wy0());
             homography[i]->wz0(kinematics[i]->wz0());
-            homography[i]->tilt(kinematics[i]->tilt());
+            homography[i]->roll(calibrationParams[i]->getRoll());
+            homography[i]->tilt(kinematics[i]->tilt() + calibrationParams[i]->getTilt());
 #ifndef OFFLINE
             homography[i]->azimuth(kinematics[i]->azimuth());
 #endif
         }
 
-        homography[i]->roll(homography[i]->roll());
-        homography[i]->tilt(kinematics[i]->tilt());
-
-
         // Approximate brightness gradient
         edgeDetector[i]->gradient(yImage);
         
-        // times[i][1] = timer.end();
-
         // Run edge detection
         edgeDetector[i]->edgeDetect(greenImage, *(edges[i]));
 
-        // times[i][2] = timer.end();
-
         // Run hough line detection
         hough[i]->run(*(edges[i]), *(houghLines[i]));
-
-        // times[i][3] = timer.end();
 
         // Find field lines
         houghLines[i]->mapToField(*(homography[i]));
         fieldLines[i]->find(*(houghLines[i]));
 
-        // times[i][4] = timer.end();
-
         // Classify field lines
         fieldLines[i]->classify(*(boxDetector[i]), *(cornerDetector[i]));
 
-        //times[i][5] = timer.end();
-        
-#ifdef USE_LOGGING
-        logImage(i);
-#endif
+        if (!ballDetected) {
+            ballDetected = ballDetector[i]->findBall(orangeImage, kinematics[i]->wz0());
+        }
     }
+
+// TODO move to logImage
+#ifdef USE_LOGGING
+    if (getenv("LOG_THIS") != NULL) {
+        if (strcmp(getenv("LOG_THIS"), std::string("top").c_str()) == 0) {
+            logImage(0);
+            setenv("LOG_THIS", "false", 1);
+            std::cerr << "pCal logging top log\n";
+        } else if (strcmp(getenv("LOG_THIS"), std::string("bottom").c_str()) == 0) {
+            logImage(1);
+            setenv("LOG_THIS", "false", 1);
+            std::cerr << "pCal logging bot log\n";
+        }// else
+           // std::cerr << "N "; 
+    } else {
+        logImage(0);
+        logImage(1);
+    }
+#endif
 
     // Send messages on outportals
     sendLinesOut();
-
-    // for (int i = 0; i < 2; i++) {
-    //     if (i == 0)
-    //         std::cout << "From top camera:" << std::endl;
-    //     else
-    //         std::cout << std::endl << "From bottom camera:" << std::endl;
-    //     std::cout << "Front end: " << times[i][0] << std::endl;
-    //     std::cout << "Gradient: " << times[i][1] << std::endl;
-    //     std::cout << "Edge detection: " << times[i][2] << std::endl;
-    //     std::cout << "Hough: " << times[i][3] << std::endl;
-    //     std::cout << "Field lines detection: " << times[i][4] << std::endl;
-    //     std::cout << "Field lines classification: " << times[i][5] << std::endl;
-    // }
+    ballOn = ballDetected;
+    updateVisionBall();
 }
 
-void VisionModule::logImage(int i) {
+#ifdef USE_LOGGING
+void VisionModule::logImage(int i) 
+{
+    std::string t = "true";
+
     if (control::flags[control::tripoint]) {
         ++image_index;
         
@@ -268,51 +271,66 @@ void VisionModule::logImage(int i) {
         joints.append(nblog::SExpr("r_ankle_roll", ja_pb.r_ankle_roll() ));
         contents.push_back(joints);
 
-        nblog::SExpr camParams("CameraParams", "tripoint", clock(), image_index, 0);
-        camParams.append(nblog::SExpr(image_from, cameraParams[i]->getRoll(), cameraParams[i]->getTilt()));
-        contents.push_back(camParams);
+        nblog::SExpr cal("CalibrationParams", "tripoint", clock(), image_index, 0);
+        cal.append(nblog::SExpr(image_from, calibrationParams[i]->getRoll(), calibrationParams[i]->getTilt()));
+        contents.push_back(cal);
 
         nblog::NBLog(NBL_IMAGE_BUFFER, "tripoint", contents, im_buf);
     }
 }
-// TODO filter out repeat lines
+
+#endif
+
 void VisionModule::sendLinesOut()
 {
-    messages::FieldLines pLines;
+    // Mark repeat lines (already found in bottom camera) in top camera
+    for (int i = 0; i < fieldLines[0]->size(); i++) {
+        for (int j = 0; j < fieldLines[1]->size(); j++) {
+            FieldLine& topField = (*(fieldLines[0]))[i];
+            FieldLine& botField = (*(fieldLines[1]))[j];
+            for (int k = 0; k < 2; k++) {
+                const GeoLine& topGeo = topField[k].field();
+                const GeoLine& botGeo = botField[k].field();
+                if (topGeo.error(botGeo) < 0.3) // TODO constant
+                    (*(fieldLines[0]))[i].repeat(true);
+            }
+        }
+    }
 
+    // Outportal results
+    // NOTE repeats are not outportaled
+    messages::FieldLines pLines;
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < fieldLines[i]->size(); j++) {
             messages::FieldLine* pLine = pLines.add_line();
             FieldLine& line = (*(fieldLines[i]))[j];
+            if (line.repeat()) continue;
 
             for (int k = 0; k < 2; k++) {
                 messages::HoughLine pHough;
                 HoughLine& hough = line[k];
 
-                // Lines need not be polarized for localization and behaviors
-                if (hough.field().r() < 0) {
-                    pHough.set_r(-hough.field().r());
-                    pHough.set_t(diffRadians(hough.field().t(), 180));
-                    pHough.set_ep0(hough.field().ep0());
-                    pHough.set_ep1(hough.field().ep1());
+                pHough.set_r(hough.field().r());
+                pHough.set_t(hough.field().t());
+                pHough.set_ep0(hough.field().ep0());
+                pHough.set_ep1(hough.field().ep1());
+
+                if (hough.field().r() < 0)
                     pLine->mutable_outer()->CopyFrom(pHough);
-                } else {
-                    pHough.set_r(hough.field().r());
-                    pHough.set_t(hough.field().t());
-                    pHough.set_ep0(hough.field().ep0());
-                    pHough.set_ep1(hough.field().ep1());
+                else
                     pLine->mutable_inner()->CopyFrom(pHough);
-                }
             }
 
             pLine->set_id(static_cast<int>(line.id()));
         }
     }
+
     portals::Message<messages::FieldLines> linesOutMessage(&pLines);
     linesOut.setMessage(linesOutMessage);
 }
 
-const std::string VisionModule::getStringFromTxtFile(std::string path) {
+const std::string VisionModule::getStringFromTxtFile(std::string path) 
+{
     std::ifstream textFile;
     textFile.open(path);
 
@@ -335,7 +353,8 @@ const std::string VisionModule::getStringFromTxtFile(std::string path) {
   load the three compoenets of a Colors struct, white, green, and orange,
   from the 18 values for either the top or bottom image. 
 */
-Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera) {
+Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera) 
+{
     Colors* ret = new man::vision::Colors;
     nblog::SExpr* params;
 
@@ -376,29 +395,87 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera) {
 
     return ret;
 }
-void VisionModule::setCameraParams(std::string robotName) {
-    setCameraParams(0, robotName);
-    setCameraParams(1, robotName);
+
+void VisionModule::updateVisionBall()
+{
+    portals::Message<messages::VisionBall> ball_message(0);
+
+    Ball topBall = ballDetector[0]->best();
+    Ball botBall = ballDetector[1]->best();
+
+    bool top = false;
+    Ball best = botBall;
+
+    if (ballOn) {
+        ballOnCount++;
+        ballOffCount = 0;
+    }
+    else {
+        ballOnCount = 0;
+        ballOffCount++;
+    }
+
+    if (topBall.confidence() > botBall.confidence()) {
+        best = topBall;
+        top = true;
+    }
+
+    ball_message.get()->set_on(ballOn);
+    ball_message.get()->set_frames_on(ballOnCount);
+    ball_message.get()->set_frames_off(ballOffCount);
+    ball_message.get()->set_intopcam(top);
+
+    if (ballOn)
+    {
+        ball_message.get()->set_distance(best.dist);
+
+        ball_message.get()->set_radius(best.blob.firstPrincipalLength());
+        double bearing = atan(best.x_rel / best.y_rel);
+        ball_message.get()->set_bearing(bearing);
+        ball_message.get()->set_bearing_deg(bearing * TO_DEG);
+
+        double angle_x = (best.imgWidth/2 - best.getBlob().centerX()) /
+            (best.imgWidth) * HORIZ_FOV_DEG;
+        double angle_y = (best.imgHeight/2 - best.getBlob().centerY()) /
+            (best.imgHeight) * VERT_FOV_DEG;
+        ball_message.get()->set_angle_x_deg(angle_x);
+        ball_message.get()->set_angle_y_deg(angle_y);
+
+        ball_message.get()->set_confidence(best.confidence());
+        ball_message.get()->set_x(static_cast<int>(best.blob.centerX()));
+        ball_message.get()->set_y(static_cast<int>(best.blob.centerY()));
+    }
+
+    ballOut.setMessage(ball_message);
 }
 
-void VisionModule::setCameraParams(int camera, std::string robotName) {
+void VisionModule::setCalibrationParams(std::string robotName) 
+{
+    setCalibrationParams(0, robotName);
+    setCalibrationParams(1, robotName);
+}
+
+void VisionModule::setCalibrationParams(int camera, std::string robotName) 
+{
     if (std::string::npos != robotName.find(".local")) {
         robotName.resize(robotName.find("."));
         if (robotName == "she-hulk")
             robotName = "shehulk";
     }
     if (robotName == "") {
-        std::cout << "Could not set camera params: No Robot Name" << std::endl;
         return;
     }
     
-    nblog::SExpr* robot = cameraLisp->get(1)->find(robotName);
+    nblog::SExpr* robot = calibrationLisp->get(1)->find(robotName);
 
     if (robot != NULL) {
         std::string cam = camera == 0 ? "top" : "bottom";
         double roll =  robot->find(cam)->get(1)->valueAsDouble();
-        double pitch = robot->find(cam)->get(2)->valueAsDouble();
-        cameraParams[camera] = new CameraParams(roll, pitch);
+        double tilt = robot->find(cam)->get(2)->valueAsDouble();
+        calibrationParams[camera] = new CalibrationParams(roll, tilt);
+
+        std::cerr << "Found and set calibration params for " << robotName;
+        std::cerr << "Roll: " << roll << " Tilt: " << tilt << std::endl;
     }
 }
 

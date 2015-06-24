@@ -13,6 +13,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <string>
+#include <iostream>
 
 namespace man {
 namespace vision {
@@ -98,7 +99,6 @@ inline double diffRadians(double a, double b)
   return fabs(sMod(a - b, 2 * M_PI));
 }
 
-
 inline void unitVec(double x, double y, double& u, double& v)
 {
   double g = sqrt(x * x + y * y);
@@ -106,8 +106,17 @@ inline void unitVec(double x, double y, double& u, double& v)
   v = y / g;
 }
 
-std::string strPrintf(const char* format, ...);
+inline void translateRotate(double x, double y, double transX, double transY, 
+                            double rotation, double& xTransformed, double& yTransformed)
+{
+    double xRotated = x*cos(rotation) - y*sin(rotation);
+    double yRotated = x*sin(rotation) + y*cos(rotation);
 
+    xTransformed = xRotated + transX;
+    yTransformed = yRotated + transY;
+}
+
+std::string strPrintf(const char* format, ...);
 
 // ************
 // *          *
@@ -248,6 +257,7 @@ class LineFit
 {
   double sumW;
   double sumX, sumY, sumXY, sumX2, sumY2;
+  int _count;
 
   bool solved;
 
@@ -270,6 +280,8 @@ public:
   double centerX() const { return sumX / sumW;}
 
   double centerY() const { return sumY / sumW;}
+
+  int count() const { return _count; }
 
   double firstPrincipalLength() { solve(); return pLen1;}
 
