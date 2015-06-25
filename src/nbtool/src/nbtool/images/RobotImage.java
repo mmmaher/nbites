@@ -14,10 +14,10 @@ public class RobotImage extends ImageParent {
 		super(w, h, d);
 	}
 
-	@Override
-	public int pixelSize() {
-		return -1;
-	}
+	// @Override
+	// public int pixelSize() {
+	// 	return -1;
+	// }
 
 	private static final Color[] angleMap = initColorMap();
 
