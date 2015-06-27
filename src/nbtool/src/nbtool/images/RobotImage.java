@@ -14,7 +14,7 @@ public class RobotImage extends ImageParent {
 		super(w, h, d);
 	}
 
-	@Override
+	// @Override
 	public int pixelSize() {
 		return -1;
 	}
@@ -179,6 +179,7 @@ public class RobotImage extends ImageParent {
 						System.out.println("Accum average = "+accum);
 						System.out.println("White caps = "+whiteCaps);
 						System.out.println("White tops = "+whiteTop);
+						System.out.println("Span = "+span);
 					}
 					for (int j = start; j < i; j++) {
 						//maxbottom[j] = 0;
