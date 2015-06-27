@@ -12,8 +12,11 @@
 #include "Kinematics.h"
 #include "Homography.h"
 #include "BallDetector.h"
+#include "RobotImage.h"
 #include "BallModel.pb.h"
 #include "InertialState.pb.h"
+#include "VisionRobot.pb.h"
+
 
 namespace man {
 namespace vision {
@@ -30,6 +33,7 @@ public:
 
     portals::OutPortal<messages::FieldLines> linesOut;
     portals::OutPortal<messages::VisionBall> ballOut;
+    portals::OutPortal<messages::RobotObstacle> robotObstacleOut;
 
     ImageFrontEnd* getFrontEnd(bool topCamera = true) const { return frontEnd[!topCamera]; }
     EdgeList* getEdges(bool topCamera = true) const { return edges[!topCamera]; }
@@ -46,6 +50,8 @@ public:
     void setColorParams(Colors* colors, bool topCamera) { colorParams[!topCamera] = colors; }
     const std::string getStringFromTxtFile(std::string path);
     Colors* getColorsFromLisp(nblog::SExpr* colors, int camera);
+
+    void updateObstacleBox();
 
     void setCalibrationParams(std::string robotName);
     void setCalibrationParams(int camera, std::string robotName);
@@ -85,6 +91,10 @@ private:
 
     nblog::SExpr* calibrationLisp;
     size_t image_index;
+
+    // obstacleBox
+    RobotImage* robotImageObstacle;
+    int obstacleBox[4];
 };
 
 }

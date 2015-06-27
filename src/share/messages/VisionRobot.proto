@@ -47,3 +47,11 @@ message VisionObstacle
     optional float mid_bearing = 11;
     optional float right_bearing = 12;
 }
+
+message RobotObstacle
+{
+    optional sint32 box_top = 1;
+    optional sint32 box_bottom = 2;
+    optional sint32 box_left = 3;
+    optional sint32 box_right = 4;
+}
