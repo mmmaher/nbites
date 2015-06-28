@@ -16,7 +16,7 @@ void RobotModelProvider::update(RobotModelBH& robotModel)
 {
   robotModel.setJointData(theFilteredJointDataBH, theRobotDimensionsBH, theMassCalibrationBH);
 
-  DECLARE_DEBUG_DRAWING3D("module:RobotModelProvider:massOffsets", "origin",
+  DECLARE_DEBUG_DRAWING3D("module:RobotModelProvider:massOffsets", "robot",
   {
     for(int i = 0; i < MassCalibrationBH::numOfLimbs; ++i)
     {
@@ -25,7 +25,7 @@ void RobotModelProvider::update(RobotModelBH& robotModel)
     }
   });
 
-  DECLARE_DEBUG_DRAWING3D("module:RobotModelProvider:joints", "origin",
+  DECLARE_DEBUG_DRAWING3D("module:RobotModelProvider:joints", "robot",
   {
     const float axisLineWidth = 1.f;
 
@@ -69,6 +69,5 @@ void RobotModelProvider::update(RobotModelBH& robotModel)
     }
   });
 }
-
 
 MAKE_MODULE(RobotModelProvider, Sensing)

@@ -1,6 +1,6 @@
 /**
-* @file AsymmetricWalkingEngineTools.h
-* Declaration of tools utilized by the AsymmetricWalkingEngine
+* @file WalkingEngineTools.h
+* Declaration of tools utilized by the WalkingEngine
 * @author Colin Graf
 */
 
@@ -9,10 +9,11 @@
 STREAMABLE(VectorYZ,
 {
 public:
-  VectorYZ(float y, float z),
+    VectorYZ() = default;
+    VectorYZ(float y, float z),
 
-  (float)(0) y,
-  (float)(0) z,
+    (float)(0) y,
+    (float)(0) z,
 });
 
 /**
@@ -21,6 +22,6 @@ public:
 class FunctionMinimizer
 {
 public:
-  virtual float func(float pos) const = 0;
-  float minimize(float minPos, float maxPos, float startPos, float startPosDelta, float minVal, bool& clipped, const char* debugstr) const;
+    virtual float func(float pos) const = 0;
+    float minimize(float minPos, float maxPos, float startPos, float startPosDelta, float minVal, bool& clipped, const char* debugstr) const;
 };

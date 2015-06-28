@@ -1,14 +1,14 @@
 cmake_minimum_required( VERSION 2.8.0 )
-project( BHWALK )
+project( BHMOTION )
 
 add_definitions(-DLINUX -DRELEASE -DTARGET_ROBOT)
 
-set( bhwalk_srcs 
-  BHWalkProvider.cpp
+set( bhmotion_srcs
   MotionSelector.cpp
-  WalkingEngine.cpp
-  WalkingEngineKicks.cpp
-  WalkingEngineTools.cpp
+  bhwalk/BHWalkProvider.cpp
+  bhwalk/WalkingEngine.cpp
+  bhwalk/WalkingEngineKicks.cpp
+  bhwalk/WalkingEngineTools.cpp
   Modules/Infrastructure/NaoProvider.cpp
   Modules/Sensing/TorsoMatrixProvider.cpp
   Modules/Sensing/RobotModelProvider.cpp
@@ -67,12 +67,12 @@ set( bhwalk_srcs
 
 # Install configs
 if( NOT OFFLINE )
-    set( BHWALK_CONFIG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Config )
-    install( DIRECTORY ${BHWALK_CONFIG_DIR}
+    set( BHMOTION_CONFIG_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Config )
+    install( DIRECTORY ${BHMOTION_CONFIG_DIR}
     DESTINATION ${CMAKE_INSTALL_PREFIX} )
 endif()
 
 add_library(
-	bhwalk
+	bhmotion
 	STATIC
-	${bhwalk_srcs} )
+	${bhmotion_srcs} )

@@ -12,13 +12,15 @@
 #include "Representations/Sensing/OrientationData.h"
 #include "Representations/Configuration/DamageConfiguration.h"
 
-MODULE(SensorFilter)
-  REQUIRES(SensorDataBH)
-  REQUIRES(InertiaSensorDataBH)
-  REQUIRES(OrientationDataBH)
-  REQUIRES(DamageConfigurationBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredSensorDataBH)
-END_MODULE
+
+MODULE(SensorFilter,
+{,
+  REQUIRES(SensorDataBH),
+  REQUIRES(InertiaSensorDataBH),
+  REQUIRES(OrientationDataBH),
+  REQUIRES(DamageConfigurationBH),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredSensorDataBH),
+});
 
 /**
 * A module for sensor data filtering.

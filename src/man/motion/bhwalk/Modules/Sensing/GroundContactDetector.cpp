@@ -26,6 +26,14 @@ void GroundContactDetector::update(GroundContactStateBH& groundContactState)
 
   MODIFY("module:GroundContactDetector:contact", contact);
 
+  if(theMotionInfoBH.motion == MotionRequestBH::getUp) //hack to avoid long pause after get up
+  {
+    contact = true;
+    useAngle = false;
+    groundContactState.contact = contact;
+    contactStartTime = theFrameInfoBH.time;
+  }
+
   // Northern Bites don't trust this module, a bug in it means an inactive robot
   groundContactState.contact = true;
   return;
@@ -67,10 +75,9 @@ void GroundContactDetector::update(GroundContactStateBH& groundContactState)
         accValues.clear();
         gyroValues.clear();
         angleNoises.clear();
-#ifndef TARGET_SIM
-        // if(contactStartTime != 0)
+
+        // if(SystemCall::getMode() == SystemCall::physicalRobot && contactStartTime != 0)
         //   SystemCall::playSound("high.wav");
-#endif
       }
     }
     else

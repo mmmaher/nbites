@@ -23,15 +23,20 @@ RobotHealthProvider::RobotHealthProvider() :
   lastWlanCheckedTime(0)
 #endif
 {
+  InMapFile stream("build.cfg");
+  if(stream.exists())
+  {
+    stream >> buildInfo;
+  }
 }
 
 void RobotHealthProvider::update(RobotHealthBH& robotHealth)
 {
   // count percepts
-  if(theBallPerceptBH.ballWasSeen)
+  if(theBallPerceptBH.status == BallPerceptBH::seen)
     ++robotHealth.ballPercepts;
-  robotHealth.linePercepts += theLinePerceptBH.lines.size();
-  robotHealth.goalPercepts += theGoalPerceptBH.goalPosts.size();
+  robotHealth.linePercepts += static_cast<unsigned>(theLinePerceptBH.lines.size());
+  robotHealth.goalPercepts += static_cast<unsigned>(theGoalPerceptBH.goalPosts.size());
 
   // Transfer information from other process:
   robotHealth = theMotionRobotHealthBH;
@@ -47,10 +52,7 @@ void RobotHealthProvider::update(RobotHealthBH& robotHealth)
   if(theFrameInfoBH.getTimeSince(lastBodyTemperatureReadTime) > 10 * 1000)
   {
     lastBodyTemperatureReadTime = theFrameInfoBH.time;
-    float cpuTemperature, mbTemperature;
-    naoBody.getTemperature(cpuTemperature, mbTemperature);
-    robotHealth.cpuTemperature = (unsigned char)cpuTemperature;
-    robotHealth.boardTemperature = (unsigned char)mbTemperature;
+    robotHealth.cpuTemperature = (unsigned char) naoBody.getCPUTemperature();
   }
   if(theFrameInfoBH.getTimeSince(lastWlanCheckedTime) > 10 * 1000)
   {
@@ -65,9 +67,11 @@ void RobotHealthProvider::update(RobotHealthBH& robotHealth)
 
     // transfer maximal temperature, battery level and total current from SensorDataBH:
     robotHealth.batteryLevel = (unsigned char)((theFilteredSensorDataBH.data[SensorDataBH::batteryLevel] == SensorDataBH::off ? 1.f : theFilteredSensorDataBH.data[SensorDataBH::batteryLevel]) * 100.f);
-	robotHealth.maxJointTemperature = *std::max_element(theFilteredSensorDataBH.temperatures,theFilteredSensorDataBH.temperatures+JointDataBH::numOfJoints);	
-	robotHealth.totalCurrent=std::accumulate(theFilteredSensorDataBH.currents,theFilteredSensorDataBH.currents+JointDataBH::numOfJoints,0.0f);
-	
+    const unsigned char* maxTemperature = std::max_element(theFilteredSensorDataBH.temperatures,theFilteredSensorDataBH.temperaturesJointDataBH::numOfJoints);
+    robotHealth.maxJointTemperature = *maxTemperature;
+    robotHealth.jointWithMaxTemperature = (JointDataBH::Joint) (maxTemperature - theFilteredSensorDataBH.temperatures);
+    robotHealth.totalCurrent=std::accumulate(theFilteredSensorDataBH.currents,theFilteredSensorDataBH.currents+JointDataBH::numOfJoints, 0.0f);
+
     // Add cpu load, memory load and robot name:
     float memoryUsage, load[3];
     SystemCall::getLoad(memoryUsage, load);
@@ -114,6 +118,11 @@ void RobotHealthProvider::update(RobotHealthBH& robotHealth)
     }
     else if(highTemperatureSince < theFrameInfoBH.time)
       highTemperatureSince = theFrameInfoBH.time;
+
+    robotHealth.configuration = buildInfo.configuration;
+    strncpy(robotHealth.hash, buildInfo.hash.c_str(), sizeof(robotHealth.hash));
+    robotHealth.clean = buildInfo.clean;
+    strncpy(robotHealth.location, Global::getSettings().location.c_str(), sizeof(robotHealth.location));
   }
 }
 

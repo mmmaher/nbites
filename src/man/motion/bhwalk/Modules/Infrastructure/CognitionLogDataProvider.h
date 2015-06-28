@@ -11,9 +11,10 @@
 #include "Tools/Debugging/DebugImages.h"
 #include "Tools/Debugging/DebugDrawings3D.h"
 #include "LogDataProvider.h"
+#include "Representations/Infrastructure/AudioData.h"
+#include "Representations/Infrastructure/GroundTruthWorldState.h"
 #include "Representations/Infrastructure/Image.h"
 #include "Representations/Infrastructure/FrameInfo.h"
-#include "Representations/Configuration/FieldDimensions.h"
 #include "Representations/Perception/LinePercept.h"
 #include "Representations/Perception/BallPercept.h"
 #include "Representations/Perception/GoalPercept.h"
@@ -21,64 +22,117 @@
 #include "Representations/Perception/ImageCoordinateSystem.h"
 #include "Representations/Modeling/RobotPose.h"
 #include "Representations/Modeling/BallModel.h"
-#include "Representations/Modeling/RobotsModel.h"
-#include "Representations/Perception/JPEGImage.h"
+#include "Representations/Infrastructure/JPEGImage.h"
 #include "Representations/Infrastructure/JointData.h"
+#include "Representations/Infrastructure/ReceivedSPLStandardMessages.h"
 #include "Representations/Infrastructure/RobotHealth.h"
-#include "Representations/Infrastructure/Thumbnail.h"
+#include "Representations/Infrastructure/TeammateData.h"
 #include "Representations/Modeling/SideConfidence.h"
 #include "Representations/Modeling/ObstacleModel.h"
+#include "Representations/Modeling/TeammateReliability.h"
 #include "Representations/BehaviorControl/BehaviorControlOutput.h"
 #include "Representations/Infrastructure/SensorData.h"
 #include "Representations/Modeling/CombinedWorldModel.h"
 #include "Representations/MotionControl/MotionInfo.h"
-#include "Representations/Perception/ColorReference.h"
 #include "Representations/Perception/FieldBoundary.h"
-#include "Representations/Infrastructure/Thumbnail.h"
-#include "Representations/Perception/ObstacleSpots.h"
 #include "Representations/Modeling/ObstacleWheel.h"
 #include "Representations/Perception/BodyContour.h"
+#include "Representations/Modeling/LocalizationTeamBall.h"
+#include "Representations/Infrastructure/LowFrameRateImage.h"
+#include "Representations/Perception/RobotPercept.h"
+#include "Representations/Perception/LineSpots.h"
+#include "Representations/Modeling/Odometer.h"
+#include "Representations/Sensing/GroundContactState.h"
 
-MODULE(CognitionLogDataProvider)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(CameraInfoBH)
-  USES(CameraInfoBH)
-  PROVIDES_WITH_OUTPUT(ImageBH)
-  REQUIRES(FieldDimensionsBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(FrameInfoBH)
-  USES(FrameInfoBH)
-  REQUIRES(OwnTeamInfoBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(LinePerceptBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(BallPerceptBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GoalPerceptBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(BallModelBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredJointDataBH)
-  PROVIDES_WITH_DRAW(RobotsModelBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GroundTruthRobotPoseBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GroundTruthBallModelBH)
-  PROVIDES_WITH_DRAW(GroundTruthRobotsModelBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(CameraMatrixBH)
-  REQUIRES(ImageBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(ImageCoordinateSystemBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(RobotPoseBH)
-  PROVIDES_WITH_MODIFY_AND_DRAW(SideConfidenceBH)
-  PROVIDES_WITH_DRAW(ObstacleModelBH)
-  PROVIDES(FilteredSensorDataBH)
-  PROVIDES_WITH_MODIFY(BehaviorControlOutputBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(MotionRequestBH)
-  PROVIDES_WITH_MODIFY(HeadMotionRequestBH)
-  PROVIDES_WITH_MODIFY(BehaviorLEDRequestBH)
-  PROVIDES_WITH_MODIFY(ArmMotionRequestBH)
-  PROVIDES_WITH_DRAW(CombinedWorldModelBH)
-  PROVIDES_WITH_MODIFY(MotionInfoBH)
-  PROVIDES_WITH_MODIFY_AND_DRAW(RobotHealthBH)
-  PROVIDES_WITH_MODIFY_AND_DRAW(FieldBoundaryBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(ActivationGraphBH)
-  PROVIDES_WITH_DRAW(ObstacleWheelBH)
-  PROVIDES(ColorReferenceBH)
-  PROVIDES_WITH_DRAW(ObstacleSpotsBH)
-  PROVIDES_WITH_OUTPUT_AND_DRAW(ThumbnailBH)
-  PROVIDES_WITH_DRAW(BodyContourBH)
-END_MODULE
+// MODULE(CognitionLogDataProvider)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT(CameraInfoBH)
+//   USES(CameraInfoBH)
+//   PROVIDES_WITH_OUTPUT(ImageBH)
+//   REQUIRES(FieldDimensionsBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT(FrameInfoBH)
+//   USES(FrameInfoBH)
+//   REQUIRES(OwnTeamInfoBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT(LinePerceptBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(BallPerceptBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GoalPerceptBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(BallModelBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredJointDataBH)
+//   PROVIDES_WITH_DRAW(RobotsModelBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GroundTruthRobotPoseBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GroundTruthBallModelBH)
+//   PROVIDES_WITH_DRAW(GroundTruthRobotsModelBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(CameraMatrixBH)
+//   REQUIRES(ImageBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(ImageCoordinateSystemBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT(RobotPoseBH)
+//   PROVIDES_WITH_MODIFY_AND_DRAW(SideConfidenceBH)
+//   PROVIDES_WITH_DRAW(ObstacleModelBH)
+//   PROVIDES(FilteredSensorDataBH)
+//   PROVIDES_WITH_MODIFY(BehaviorControlOutputBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(MotionRequestBH)
+//   PROVIDES_WITH_MODIFY(HeadMotionRequestBH)
+//   PROVIDES_WITH_MODIFY(BehaviorLEDRequestBH)
+//   PROVIDES_WITH_MODIFY(ArmMotionRequestBH)
+//   PROVIDES_WITH_DRAW(CombinedWorldModelBH)
+//   PROVIDES_WITH_MODIFY(MotionInfoBH)
+//   PROVIDES_WITH_MODIFY_AND_DRAW(RobotHealthBH)
+//   PROVIDES_WITH_MODIFY_AND_DRAW(FieldBoundaryBH)
+//   PROVIDES_WITH_MODIFY_AND_OUTPUT(ActivationGraphBH)
+//   PROVIDES_WITH_DRAW(ObstacleWheelBH)
+//   PROVIDES(ColorReferenceBH)
+//   PROVIDES_WITH_DRAW(ObstacleSpotsBH)
+//   PROVIDES_WITH_OUTPUT_AND_DRAW(ThumbnailBH)
+//   PROVIDES_WITH_DRAW(BodyContourBH)
+// END_MODULE
+
+MODULE(CognitionLogDataProvider,
+{,
+  REQUIRES(OwnTeamInfo),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(OwnTeamInfo),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(OpponentTeamInfo),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GameInfo),
+  PROVIDES_WITH_MODIFY(RobotInfo),
+  PROVIDES_WITH_OUTPUT(AudioData),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(CameraInfo),
+  USES(CameraInfo),
+  PROVIDES(CameraInfoFullRes),
+  PROVIDES_WITH_OUTPUT(Image),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(FrameInfo),
+  USES(FrameInfo),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(LinePercept),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(BallPercept),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(GoalPercept),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(BallModel),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(FilteredJointData),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(CameraMatrix),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(ImageCoordinateSystem),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(RobotPose),
+  PROVIDES_WITH_MODIFY_AND_DRAW(SideConfidence),
+  PROVIDES_WITH_DRAW(ObstacleModel),
+  PROVIDES(FilteredSensorData),
+  PROVIDES_WITH_MODIFY(BehaviorControlOutput),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT_AND_DRAW(MotionRequest),
+  PROVIDES_WITH_MODIFY(HeadMotionRequest),
+  PROVIDES_WITH_MODIFY(BehaviorLEDRequest),
+  PROVIDES_WITH_MODIFY(ArmMotionRequest),
+  PROVIDES_WITH_DRAW(CombinedWorldModel),
+  PROVIDES_WITH_MODIFY(MotionInfo),
+  PROVIDES_WITH_MODIFY_AND_DRAW(RobotHealth),
+  PROVIDES_WITH_MODIFY_AND_DRAW(FieldBoundary),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(ActivationGraph),
+  PROVIDES_WITH_DRAW(ObstacleWheel),
+  PROVIDES_WITH_DRAW(BodyContour),
+  PROVIDES_WITH_MODIFY_AND_DRAW(RobotPercept),
+  PROVIDES_WITH_MODIFY(GroundTruthWorldState),
+  PROVIDES_WITH_DRAW(LineSpots),
+  PROVIDES_WITH_MODIFY(Odometer),
+  PROVIDES_WITH_MODIFY(GroundContactState),
+  PROVIDES_WITH_MODIFY_AND_DRAW(LocalizationTeamBall),
+  PROVIDES(TeammateDataCompressed),
+  PROVIDES_WITH_DRAW(TeammateData),
+  PROVIDES_WITH_DRAW(TeammateReliability),
+  PROVIDES_WITH_MODIFY(ReceivedSPLStandardMessages),
+});
 
 class CognitionLogDataProvider : public CognitionLogDataProviderBase, public LogDataProvider
 {
@@ -86,30 +140,54 @@ private:
   static PROCESS_WIDE_STORAGE(CognitionLogDataProvider) theInstance; /**< Points to the only instance of this class in this process or is 0 if there is none. */
   bool frameDataComplete; /**< Were all messages of the current frame received? */
   BehaviorControlOutputBH behaviorControlOutput;
+  ImageBH lastImage[CameraInfoBH::numOfCameras];
 
   DECLARE_DEBUG_IMAGE(corrected);
 
 #define DISTANCE 300
 
-  UPDATE2(ImageBH,
-  {
+  void update(ImageBH& image)
+   {
+    if(representationBuffer[idLowFrameRateImage])
+    {
+      CameraInfoBH& info = (CameraInfoBH&) *representationBuffer[idCameraInfo];
+      LowFrameRateImageBH& lfri = (LowFrameRateImageBH&) *representationBuffer[idLowFrameRateImage];
+      if(lfri.imageUpdated)
+      {
+        lastImage[info.camera] = lfri.image;
+        image = lfri.image;
+      }
+      else
+        image = lastImage[info.camera];
+    }
+    else if(representationBuffer[idImage])
+      image = *((ImageBH*)representationBuffer[idImage]);
+
     DECLARE_DEBUG_DRAWING3D("representation:ImageBH", "camera");
     IMAGE3D("representation:ImageBH", DISTANCE, 0, 0, 0, 0, 0,
             DISTANCE * theCameraInfoBH.width / theCameraInfoBH.focalLength,
             DISTANCE * theCameraInfo.height / theCameraInfoBH.focalLength,
-            _Image);
-    DEBUG_RESPONSE("representation:JPEGImage", OUTPUT(idJPEGImage, bin, JPEGImage(_Image)););
-  })
+            image);
+    DEBUG_RESPONSE("representation:JPEGImage", OUTPUT(idJPEGImage, bin, JPEGImage(image)););
+  }
+  UPDATE(RobotPerceptBH)
+  UPDATE(OwnTeamInfoBH)
+  UPDATE(OpponentTeamInfoBH)
+  UPDATE(GameInfoBH)
+  UPDATE(RobotInfoBH)
+  UPDATE(AudioDataBH)
   UPDATE(CameraInfoBH)
+  void update(CameraInfoFullResBH& cameraInfoFullRes)
+  {
+    if(representationBuffer[idCameraInfo])
+      cameraInfoFullRes = *((CameraInfoBH*) representationBuffer[idCameraInfo]);
+  }
   UPDATE(FrameInfoBH)
-  UPDATE2(FieldBoundaryBH, _FieldBoundary.width = theImageBH.width;);
-  UPDATE(ThumbnailBH)
+  UPDATE(FieldBoundaryBH);
   UPDATE(ActivationGraphBH)
   UPDATE(ObstacleWheelBH)
   UPDATE(BodyContourBH);
-  UPDATE(ObstacleSpotsBH)
   UPDATE(RobotHealthBH);
-  UPDATE(ColorReferenceBH)
 
   UPDATE(BehaviorControlOutputBH);
   void update(MotionRequestBH& motionRequest) {motionRequest = behaviorControlOutput.motionRequest;}
@@ -121,15 +199,16 @@ private:
   UPDATE(ObstacleModelBH)
   UPDATE(FilteredSensorDataBH)
   UPDATE(LinePerceptBH)
+  UPDATE(LineSpotsBH)
   UPDATE(BallPerceptBH)
   UPDATE(GoalPerceptBH)
   UPDATE(BallModelBH)
+  UPDATE(LocalizationTeamBallBH)
   UPDATE(FilteredJointDataBH)
-  UPDATE(RobotsModelBH)
-  UPDATE2(GroundTruthRobotPoseBH, _GroundTruthRobotPose.timestamp = theFrameInfoBH.time;)
-  UPDATE(GroundTruthBallModelBH)
-  UPDATE(GroundTruthRobotsModelBH)
   UPDATE(CameraMatrixBH)
+  UPDATE(TeammateDataCompressedBH)
+  UPDATE(TeammateDataBH)
+  UPDATE(TeammateReliabilityBH)
   UPDATE2(ImageCoordinateSystemBH,
   {
     _ImageCoordinateSystem.setCameraInfo(theCameraInfoBH);
@@ -173,9 +252,13 @@ private:
       }
     });
   })
-  UPDATE2(RobotPoseBH,{_RobotPose.draw(theOwnTeamInfoBH.teamColor != TEAM_BLUE);})
+  UPDATE(RobotPoseBH)
   UPDATE(SideConfidenceBH)
   UPDATE(MotionInfoBH)
+  UPDATE(GroundTruthWorldStateBH)
+  UPDATE(OdometerBH)
+  UPDATE(GroundContactStateBH)
+  UPDATE(ReceivedSPLStandardMessagesBH)
 
 
   /**

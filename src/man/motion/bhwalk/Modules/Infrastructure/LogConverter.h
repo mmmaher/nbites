@@ -1,54 +1,56 @@
-/**
- * @file LogConverter.h
- *
- * @author reich
- * @author <a href="afabisch@tzi.de>Alexander Fabisch</a>
- */
+// IN OLD BHUMAN CODE ONLY
 
-#pragma once
+// /**
+//  * @file LogConverter.h
+//  *
+//  * @author reich
+//  * @author <a href="afabisch@tzi.de>Alexander Fabisch</a>
+//  */
 
-#include "Tools/Streams/Streamable.h"
-#include "Tools/MessageQueue/InMessage.h"
+// #pragma once
 
-class LogConverter
-{
-private:
-  std::size_t sizeofSensorDataRev5703;
-  std::size_t sizeofSensorData_2d284;
-  std::size_t sizeofFrameInfo_83e22;
-  std::size_t sizeofJointData_d198df791237;
+// #include "Tools/Streams/Streamable.h"
+// #include "Tools/MessageQueue/InMessage.h"
 
-  /**
-   * @returns Newly allocated and converted SensorDataBH representation.
-   */
-  Streamable* newConvertedSensorData(InMessage& message);
+// class LogConverter
+// {
+// private:
+//   std::size_t sizeofSensorDataRev5703;
+//   std::size_t sizeofSensorData_2d284;
+//   std::size_t sizeofFrameInfo_83e22;
+//   std::size_t sizeofJointData_d198df791237;
 
-  /**
-   * @returns Newly allocated and converted FrameInfoBH representation.
-   */
-  Streamable* newConvertedFrameInfo(InMessage& message);
+//   /**
+//    * @returns Newly allocated and converted SensorDataBH representation.
+//    */
+//   Streamable* newConvertedSensorData(InMessage& message);
 
-  /**
-   * @returns Newly allocated and converted JointDataBH representation.
-   */
-  Streamable* newConvertedJointData(InMessage& message);
+//   /**
+//    * @returns Newly allocated and converted FrameInfoBH representation.
+//    */
+//   Streamable* newConvertedFrameInfo(InMessage& message);
 
-  /**
-   * @returns Newly allocated and created CameraInfoBH representation.
-   */
-  Streamable* newConvertedCameraInfo(InMessage& message);
+//   *
+//    * @returns Newly allocated and converted JointDataBH representation.
+   
+//   Streamable* newConvertedJointData(InMessage& message);
 
-  std::size_t sizeofRepresentation(const Streamable& streamable);
+//   /**
+//    * @returns Newly allocated and created CameraInfoBH representation.
+//    */
+//   Streamable* newConvertedCameraInfo(InMessage& message);
 
-public:
-  LogConverter();
+//   std::size_t sizeofRepresentation(const Streamable& streamable);
 
-  /**
-   * @param message The old representation destined for conversion.
-   * @param representationId The message id of the representation.
-   * @returns A newly allocated and converted representation.
-   */
-  Streamable* newConvertedRepresentation(InMessage& message, int representationId);
+// public:
+//   LogConverter();
 
-  bool isConversionRequired(InMessage& message, int representationId);
-};
+//   /**
+//    * @param message The old representation destined for conversion.
+//    * @param representationId The message id of the representation.
+//    * @returns A newly allocated and converted representation.
+//    */
+//   Streamable* newConvertedRepresentation(InMessage& message, int representationId);
+
+//   bool isConversionRequired(InMessage& message, int representationId);
+// };

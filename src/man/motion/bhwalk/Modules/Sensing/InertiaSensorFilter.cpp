@@ -6,8 +6,6 @@
 
 #include "InertiaSensorFilter.h"
 #include "Tools/Debugging/DebugDrawings.h"
-#include "Representations/MotionControl/MotionInfo.h"
-#include "Representations/MotionControl/WalkingEngineOutput.h"
 #include <algorithm>
 
 MAKE_MODULE(InertiaSensorFilter, Sensing)
@@ -62,6 +60,11 @@ void InertiaSensorFilter::update(OrientationDataBH& orientationData)
     reset();
   }
 
+  if(theMotionInfoBH.motion == MotionRequestBH::specialAction && theMotionInfoBH.specialActionRequest.specialAction == SpecialActionRequestBH::playDead)
+  {
+    reset();
+  }
+
   // get foot positions
   Pose3DBH leftFoot(theRobotModelBH.limbs[MassCalibrationBH::footLeft]);
   Pose3DBH rightFoot(theRobotModelBH.limbs[MassCalibrationBH::footRight]);
@@ -77,9 +80,11 @@ void InertiaSensorFilter::update(OrientationDataBH& orientationData)
   // detect the foot that is on ground
   bool useLeft = true;
   if(theMotionInfoBH.motion == MotionRequestBH::walk && theWalkingEngineOutputBH.speed.translation.x != 0)
+  {
     useLeft = theWalkingEngineOutputBH.speed.translation.x > 0 ?
               (leftOffset.translation.x > rightOffset.translation.x) :
               (leftOffset.translation.x < rightOffset.translation.x);
+  }
   else
   {
     Pose3DBH left(x.rotation);

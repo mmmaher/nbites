@@ -16,20 +16,30 @@
 #include "Tools/Module/Module.h"
 #include "Tools/RingBufferWithSum.h"
 
+  // DEFINES_PARAMETER(int, fallTime, 1000) /**< The time (in ms) to remain in state 'falling' after a detected fall */
+  // DEFINES_PARAMETER(float, staggeringAngleX, 40) /**< The threshold angle which is used to detect the robot is staggering to the back or front */
+  // DEFINES_PARAMETER(float, staggeringAngleY, 30) /**< The threshold angle which is used to detect the robot is staggering sidewards */
+  // DEFINES_PARAMETER(float, fallDownAngleY, 55) /**< The threshold angle which is used to detect a fall to the back or front */
+  // DEFINES_PARAMETER(float, fallDownAngleX, 55) /**< The threshold angle which is used to detect a sidewards fall */
+  // DEFINES_PARAMETER(float, onGroundAngle, 75) /**< The threshold angle which is used to detect the robot lying on the ground */
 
-MODULE(FallDownStateDetector)
-  REQUIRES(FilteredSensorDataBH)
-  REQUIRES(InertiaSensorDataBH)
-  USES(MotionInfoBH)
-  REQUIRES(FrameInfoBH)
-  PROVIDES_WITH_MODIFY_AND_DRAW(FallDownStateBH)
-  DEFINES_PARAMETER(int, fallTime, 1000) /**< The time (in ms) to remain in state 'falling' after a detected fall */
-  DEFINES_PARAMETER(float, staggeringAngleX, 40) /**< The threshold angle which is used to detect the robot is staggering to the back or front*/
-  DEFINES_PARAMETER(float, staggeringAngleY, 30) /**< The threshold angle which is used to detect the robot is staggering sidewards*/
-  DEFINES_PARAMETER(float, fallDownAngleY, 55) /**< The threshold angle which is used to detect a fall to the back or front*/
-  DEFINES_PARAMETER(float, fallDownAngleX, 55) /**< The threshold angle which is used to detect a sidewards fall */
-  DEFINES_PARAMETER(float, onGroundAngle, 75) /**< The threshold angle which is used to detect the robot lying on the ground */
-END_MODULE
+MODULE(FallDownStateDetector,
+{,
+  REQUIRES(FilteredSensorDataBH),
+  REQUIRES(InertiaSensorDataBH),
+  USES(MotionInfoBH),
+  REQUIRES(FrameInfoBH),
+  PROVIDES_WITH_MODIFY_AND_DRAW(FallDownStateBH),
+  LOADS_PARAMETERS(
+  {,
+    (int) fallTime, /**< The time (in ms) to remain in state 'falling' after a detected fall */
+    (float) staggeringAngleX, /**< The threshold angle which is used to detect the robot is staggering to the back or front*/
+    (float) staggeringAngleY, /**< The threshold angle which is used to detect the robot is staggering sidewards*/
+    (float) fallDownAngleY, /**< The threshold angle which is used to detect a fall to the back or front*/
+    (float) fallDownAngleX, /**< The threshold angle which is used to detect a sidewards fall */
+    (float) onGroundAngle, /**< The threshold angle which is used to detect the robot lying on the ground */
+  }),
+});
 
 
 /**
@@ -49,6 +59,13 @@ private:
   FallDownStateBH::Sidestate sidewardsOf(FallDownStateBH::Direction dir);
 
   unsigned lastFallDetected;
+
+  ENUM(KeeperJumped,
+    None,
+    KeeperJumpedLeft,
+    KeeperJumpedRight
+  );
+  KeeperJumped keeperJumped; /**< Whether the keeper has recently executed a jump motion that has to be integrated in odometry offset. */
 
   /** Indices for buffers of sensor data */
   ENUM(BufferEntry, accX, accY, accZ);

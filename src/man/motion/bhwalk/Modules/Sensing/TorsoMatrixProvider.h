@@ -7,7 +7,6 @@
 #pragma once
 
 #include "Tools/Module/Module.h"
-#include "Representations/Infrastructure/SensorData.h"
 #include "Representations/Configuration/RobotDimensions.h"
 #include "Representations/Sensing/OrientationData.h"
 #include "Representations/Sensing/RobotModel.h"
@@ -15,16 +14,17 @@
 #include "Representations/Sensing/GroundContactState.h"
 #include "Representations/MotionControl/OdometryData.h"
 
-MODULE(TorsoMatrixProvider)
-  REQUIRES(SensorDataBH)
-  REQUIRES(OrientationDataBH)
-  REQUIRES(RobotModelBH)
-  REQUIRES(RobotDimensionsBH)
-  REQUIRES(GroundContactStateBH)
-  PROVIDES_WITH_MODIFY(TorsoMatrixBH)
-  USES(TorsoMatrixBH)
-  PROVIDES_WITH_MODIFY_AND_OUTPUT(OdometryDataBH)
-END_MODULE
+
+MODULE(TorsoMatrixProvider,
+{,
+  REQUIRES(OrientationDataBH),
+  REQUIRES(RobotModelBH),
+  REQUIRES(RobotDimensionsBH),
+  REQUIRES(GroundContactStateBH),
+  PROVIDES_WITH_MODIFY(TorsoMatrixBH),
+  USES(TorsoMatrixBH),
+  PROVIDES_WITH_MODIFY_AND_OUTPUT(OdometryDataBH),
+});
 
 /**
 * @class TorsoMatrixProvider
@@ -42,15 +42,12 @@ public:
 
   /** Updates the OdometryDataBH representation.
   * @param odometryData The odometry data representation which is updated by this module.
-  * @note Northern Bites addition, uses z-axis gyro to calculate heading offset
   */
   void update(OdometryDataBH& odometryData);
 
 private:
   float lastLeftFootZRotation; /**< The last z-rotation of the left foot. */
   float lastRightFootZRotation; /**< The last z-rotation of the right foot. */
-
-  float lastAngleZ; /**< The last z-axis angle reading from IMU. */
 
   Vector3BH<> lastFootSpan; /**< The last span between both feet. */
   Pose3DBH lastTorsoMatrix; /**< The last torso matrix for calculating the odometry offset. */
