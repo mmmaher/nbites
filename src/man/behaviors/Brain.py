@@ -77,6 +77,7 @@ class Brain(object):
 
         # New vision system...
         self.visionLines = None
+        self.visionCorners = None
 
         # FSAs
         self.player = Switch.selectedPlayer.SoccerPlayer(self)
@@ -162,7 +163,7 @@ class Brain(object):
         self.updateVision()
 
         # HACK for dangerous ball flipping loc
-        # self.flipLocFilter()
+        self.flipLocFilter()
 
         # Set LED message
         self.leds.processLeds()
@@ -201,7 +202,7 @@ class Brain(object):
         output.claimed_ball = me.claimedBall
 
     def getCommUpdate(self):
-        # self.teamMembers[self.playerNumber - 1].updateMe()
+        self.teamMembers[self.playerNumber - 1].updateMe()
         self.game = self.interface.gameState
         
         if self.game.have_remote_gc:
@@ -211,20 +212,24 @@ class Brain(object):
                 else:
                     self.theirScore = self.game.team(i).score
 
-        # for i in range(len(self.teamMembers)):
-        #     if (i == self.playerNumber - 1):
-        #         continue
-        #     self.teamMembers[i].update(self.interface.worldModelList()[i])
+        for i in range(len(self.teamMembers)):
+            if (i == self.playerNumber - 1):
+                continue
+            self.teamMembers[i].update(self.interface.worldModelList()[i])
 
     def updateMotion(self):
         self.motion = self.interface.motionStatus
 
     def updateVision(self):
         self.visionLines = self.interface.visionLines
+        self.visionCorners = self.interface.visionCorners
 
-        # if self.counter % 30 == 0:
-        #     print "Visionline size:"
-        #     print self.visionLines.line_size()
+        # if self.counter % 50 == 0:
+        #     print "VisionCorner size:"
+        #     print self.visionCorners.corner_size()
+
+        # if self.visionCorners.corner_size() != 0:
+        #     print "I see a corner!!"
 
         # for i in range(0, self.visionLines.line_size()):
         #     print "Vision lines:"

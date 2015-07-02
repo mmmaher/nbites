@@ -23,6 +23,7 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
       bottomIn(),
       jointsIn(),
       linesOut(base()),
+      cornersOut(base()),
       ballOut(base()),
       robotObstacleOut(base()),
       ballOn(false),
@@ -59,6 +60,24 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
         kinematics[i] = new Kinematics(i == 0);
         homography[i] = new FieldHomography(i == 0);
         fieldLines[i] = new FieldLineList();
+#ifdef OFFLINE
+		if (i == 0) {
+			debugSpace[0] = (uint8_t *)malloc(wd * ht * sizeof(uint8_t));
+		} else {
+			debugSpace[1] = (uint8_t *)malloc((wd / 2) * (ht / 2) * sizeof(uint8_t));
+		}
+#else
+		// don't get any space if we're running on the robot
+		debugSpace[i] = NULL;
+#endif
+		if (i == 0) {
+			debugImage[i] = new DebugImage(wd, ht, debugSpace[0]);
+			debugImage[i]->reset();
+		} else {
+			debugImage[i] = new DebugImage(wd / 2, ht / 2, debugSpace[1]);
+			debugImage[i]->reset();
+		}
+
         ballDetector[i] = new BallDetector(homography[i], i == 0);
         boxDetector[i] = new GoalboxDetector();
 
@@ -77,6 +96,10 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
     }
     robotImageObstacle = new RobotImage(wd/2, ht/2);
 
+	field = new Field();
+#ifdef OFFLINE
+	field->setDebugImage(debugImage[0]);
+#endif
     setCalibrationParams(robotName);
 }
 
@@ -93,6 +116,8 @@ VisionModule::~VisionModule()
         delete kinematics[i];
         delete homography[i];
         delete fieldLines[i];
+		delete debugImage[i];
+		delete debugSpace[i];
     }
 }
 
@@ -142,7 +167,15 @@ void VisionModule::run_()
 
         // Approximate brightness gradient
         edgeDetector[i]->gradient(yImage);
-        
+
+		// only calculate the field in the top camera
+		// NEWVISION (need actual horizon information)
+		if (i ==0) {
+			field->setImages(frontEnd[0]->whiteImage(), frontEnd[0]->greenImage(),
+							 frontEnd[0]->orangeImage());
+			field->findGreenHorizon(0, 0.0f);
+		}
+
         // Run edge detection
         edgeDetector[i]->edgeDetect(greenImage, *(edges[i]));
 
@@ -156,10 +189,13 @@ void VisionModule::run_()
         // Classify field lines
         fieldLines[i]->classify(*(boxDetector[i]), *(cornerDetector[i]));
 
-        if (!ballDetected) {
-            ballDetected = ballDetector[i]->findBall(orangeImage, kinematics[i]->wz0());
-        }
+        ballDetected |= ballDetector[i]->findBall(orangeImage, kinematics[i]->wz0());
     }
+
+    // Send messages on outportals
+    sendLinesOut();
+    ballOn = ballDetected;
+    updateVisionBall();
 
 // TODO move to logImage
 #ifdef USE_LOGGING
@@ -173,7 +209,7 @@ void VisionModule::run_()
             setenv("LOG_THIS", "false", 1);
             std::cerr << "pCal logging bot log\n";
         }// else
-           // std::cerr << "N "; 
+           // std::cerr << "N ";
     } else {
         logImage(0);
         logImage(1);
@@ -188,13 +224,13 @@ void VisionModule::run_()
 }
 
 #ifdef USE_LOGGING
-void VisionModule::logImage(int i) 
+void VisionModule::logImage(int i)
 {
     std::string t = "true";
 
     if (control::flags[control::tripoint]) {
         ++image_index;
-        
+
         messages::YUVImage image;
         std::string image_from;
         if (!i) {
@@ -204,43 +240,43 @@ void VisionModule::logImage(int i)
             image = bottomIn.message();
             image_from = "camera_BOT";
         }
-        
+
         long im_size = (image.width() * image.height() * 1);
         int im_width = image.width() / 2;
         int im_height= image.height();
-        
+
         messages::JointAngles ja_pb = jointsIn.message();
         messages::InertialState is_pb = inertsIn.message();
-        
+
         std::string ja_buf;
         std::string is_buf;
         std::string im_buf((char *) image.pixelAddress(0, 0), im_size);
         ja_pb.SerializeToString(&ja_buf);
         is_pb.SerializeToString(&is_buf);
-        
+
         im_buf.append(is_buf);
         im_buf.append(ja_buf);
-        
+
         std::vector<nblog::SExpr> contents;
-        
+
         nblog::SExpr imageinfo("YUVImage", image_from, clock(), image_index, im_size);
         imageinfo.append(nblog::SExpr("width", im_width)   );
         imageinfo.append(nblog::SExpr("height", im_height) );
         imageinfo.append(nblog::SExpr("encoding", "[Y8(U8/V8)]"));
         contents.push_back(imageinfo);
-        
+
         nblog::SExpr inerts("InertialState", "tripoint", clock(), image_index, is_buf.length());
         inerts.append(nblog::SExpr("acc_x", is_pb.acc_x()));
         inerts.append(nblog::SExpr("acc_y", is_pb.acc_y()));
         inerts.append(nblog::SExpr("acc_z", is_pb.acc_z()));
-        
+
         inerts.append(nblog::SExpr("gyr_x", is_pb.gyr_x()));
         inerts.append(nblog::SExpr("gyr_y", is_pb.gyr_y()));
-        
+
         inerts.append(nblog::SExpr("angle_x", is_pb.angle_x()));
         inerts.append(nblog::SExpr("angle_y", is_pb.angle_y()));
         contents.push_back(inerts);
-        
+
         nblog::SExpr joints("JointAngles", "tripoint", clock(), image_index, ja_buf.length());
         joints.append(nblog::SExpr("head_yaw", ja_pb.head_yaw()));
         joints.append(nblog::SExpr("head_pitch", ja_pb.head_pitch()));
@@ -333,6 +369,25 @@ void VisionModule::sendLinesOut()
     linesOut.setMessage(linesOutMessage);
 }
 
+// TODO repeats
+void VisionModule::sendCornersOut()
+{
+    messages::Corners pCorners;
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < cornerDetector[i]->size(); j++) {
+            messages::Corner* pCorner = pCorners.add_corner();
+            Corner& corner = (*(cornerDetector[i]))[j];
+
+            pCorner->set_x(corner.x);
+            pCorner->set_y(corner.y);
+            pCorner->set_id(static_cast<int>(corner.id));
+        }
+    }
+
+    portals::Message<messages::Corners> cornersOutMessage(&pCorners);
+    cornersOut.setMessage(cornersOutMessage);
+}
+
 const std::string VisionModule::getStringFromTxtFile(std::string path) 
 {
     std::ifstream textFile;
@@ -342,7 +397,7 @@ const std::string VisionModule::getStringFromTxtFile(std::string path)
     textFile.seekg (0, textFile.end);
     long size = textFile.tellg();
     textFile.seekg(0);
-    
+
     // Read file into buffer and convert to string
     char* buff = new char[size];
     textFile.read(buff, size);
@@ -377,8 +432,8 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera)
                      std::stof(colors->get(2)->get(1)->serialize()),
                      std::stof(colors->get(3)->get(1)->serialize()),
                      std::stof(colors->get(4)->get(1)->serialize()),
-                     std::stof(colors->get(5)->get(1)->serialize())); 
-    
+                     std::stof(colors->get(5)->get(1)->serialize()));
+
     colors = params->get(1)->get(1);
 
     ret->green. load(std::stof(colors->get(0)->get(1)->serialize()),
@@ -386,8 +441,8 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera)
                      std::stof(colors->get(2)->get(1)->serialize()),
                      std::stof(colors->get(3)->get(1)->serialize()),
                      std::stof(colors->get(4)->get(1)->serialize()),
-                     std::stof(colors->get(5)->get(1)->serialize()));  
-    
+                     std::stof(colors->get(5)->get(1)->serialize()));
+
     colors = params->get(2)->get(1);
 
     ret->orange.load(std::stof(colors->get(0)->get(1)->serialize()),
@@ -485,11 +540,11 @@ void VisionModule::setCalibrationParams(int camera, std::string robotName)
     if (robotName == "") {
         return;
     }
-    
+
     nblog::SExpr* robot = calibrationLisp->get(1)->find(robotName);
 
     if (robot != NULL) {
-        std::string cam = camera == 0 ? "top" : "bottom";
+        std::string cam = camera == 0 ? "TOP" : "BOT";
         double roll =  robot->find(cam)->get(1)->valueAsDouble();
         double tilt = robot->find(cam)->get(2)->valueAsDouble();
         calibrationParams[camera] = new CalibrationParams(roll, tilt);

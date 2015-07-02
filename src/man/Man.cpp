@@ -121,7 +121,8 @@ Man::Man(boost::shared_ptr<AL::ALBroker> broker, const std::string &name)
         vision.inertsIn.wireTo(&topTranscriber.inertsOut, true);
         vision.setCalibrationParams(robotName);
 
-        localization.visionInput.wireTo(&vision.linesOut);
+        localization.linesInput.wireTo(&vision.linesOut);
+        localization.cornersInput.wireTo(&vision.cornersOut);
         localization.motionInput.wireTo(&motion.odometryOutput_, true);
         localization.resetInput[0].wireTo(&behaviors.resetLocOut, true);
         localization.resetInput[1].wireTo(&sharedBall.sharedBallReset, true);
@@ -161,6 +162,7 @@ Man::Man(boost::shared_ptr<AL::ALBroker> broker, const std::string &name)
         behaviors.jointsIn.wireTo(&sensors.jointsOutput_, true);
         behaviors.stiffStatusIn.wireTo(&sensors.stiffStatusOutput_, true);
         behaviors.linesIn.wireTo(&vision.linesOut, true);
+        behaviors.cornersIn.wireTo(&vision.cornersOut, true);
         // behaviors.obstacleIn.wireTo(&obstacle.obstacleOut);
         behaviors.sharedBallIn.wireTo(&sharedBall.sharedBallOutput);
         behaviors.sharedFlipIn.wireTo(&sharedBall.sharedBallReset, true);
@@ -191,6 +193,22 @@ Man::Man(boost::shared_ptr<AL::ALBroker> broker, const std::string &name)
         nblog::log_main_init();
         printf("control::control_init()\n");
         control::control_init();
+            
+#ifdef START_WITH_FILEIO
+#ifndef USE_LOGGING
+#error "option START_WITH_FILEIO defined WITHOUT option USE_LOGGING"
+#endif
+            printf("CONTROL: Starting with fileio flag set!\n");
+            control::flags[control::fileio] = 1;
+#endif
+            
+#ifdef START_WITH_THUMBNAIL
+#ifndef USE_LOGGING
+#error "option START_WITH_THUMBNAIL defined WITHOUT option USE_LOGGING"
+#endif
+            printf("CONTROL: Starting with thumbnail flag set!\n");
+            control::flags[control::thumbnail] = 1;
+#endif
         
         /*
          SPECIFIC MODULE LOGGING
@@ -251,6 +269,8 @@ Man::Man(boost::shared_ptr<AL::ALBroker> broker, const std::string &name)
 //#ifdef LOG_VISION
         cognitionThread.log<messages::FieldLines>((control::VISION), &vision.linesOut,
                                                    "proto-FieldLines", "vision");
+        cognitionThread.log<messages::Corners>((control::VISION), &vision.cornersOut,
+                                                   "proto-Corners", "vision");
         // cognitionThread.log<messages::VisionField>((control::VISION), &vision.vision_field,
         //                                            "proto-VisionField", "vision");
         // cognitionThread.log<messages::VisionBall>((control::VISION), &vision.vision_ball,

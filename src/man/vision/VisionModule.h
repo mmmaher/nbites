@@ -11,11 +11,14 @@
 #include "Hough.h"
 #include "Kinematics.h"
 #include "Homography.h"
+#include "Field.h"
+
 #include "BallDetector.h"
 #include "RobotImage.h"
 #include "BallModel.pb.h"
 #include "InertialState.pb.h"
 #include "VisionRobot.pb.h"
+
 
 
 namespace man {
@@ -32,12 +35,14 @@ public:
     portals::InPortal<messages::InertialState> inertsIn;
 
     portals::OutPortal<messages::FieldLines> linesOut;
+    portals::OutPortal<messages::Corners> cornersOut;
     portals::OutPortal<messages::VisionBall> ballOut;
     portals::OutPortal<messages::RobotObstacle> robotObstacleOut;
 
     ImageFrontEnd* getFrontEnd(bool topCamera = true) const { return frontEnd[!topCamera]; }
     EdgeList* getEdges(bool topCamera = true) const { return edges[!topCamera]; }
     HoughLineList* getLines(bool topCamera = true) const { return houghLines[!topCamera]; }
+	DebugImage* getDebugImage(bool topCamera = true) const { return debugImage[!topCamera]; }
     BallDetector* getBallDetector(bool topCamera = true) const { return ballDetector[!topCamera]; }
     HoughLineList* getHoughLines(bool topCamera = true) const { return houghLines[!topCamera]; }
     Kinematics* getKinematics(bool topCamera = true) const {return kinematics[!topCamera]; }
@@ -65,6 +70,7 @@ private:
     void logImage(int i);
 #endif
     void sendLinesOut();
+    void sendCornersOut();
     void updateVisionBall();
 
     Colors* colorParams[2];
@@ -77,6 +83,8 @@ private:
     Kinematics* kinematics[2];
     FieldHomography* homography[2];
     FieldLineList* fieldLines[2];
+	DebugImage* debugImage[2];
+	Field* field;
     GoalboxDetector* boxDetector[2];
     CornerDetector* cornerDetector[2];
     BallDetector* ballDetector[2];
@@ -88,6 +96,8 @@ private:
     bool ballOn;
     int ballOnCount;
     int ballOffCount;
+
+	uint8_t * debugSpace[2];
 
     nblog::SExpr* calibrationLisp;
     size_t image_index;
