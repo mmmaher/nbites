@@ -215,28 +215,29 @@ void VisionModule::run_()
 
 #ifdef USE_LOGGING
         logImage(i);
-    if (getenv("LOG_THIS") != NULL) {
-        if (strcmp(getenv("LOG_THIS"), std::string("top").c_str()) == 0) {
+        if (getenv("LOG_THIS") != NULL) {
+            if (strcmp(getenv("LOG_THIS"), std::string("top").c_str()) == 0) {
+                logImage(0);
+                setenv("LOG_THIS", "false", 1);
+                std::cerr << "pCal logging top log\n";
+            } else if (strcmp(getenv("LOG_THIS"), std::string("bottom").c_str()) == 0) {
+                logImage(1);
+                setenv("LOG_THIS", "false", 1);
+                std::cerr << "pCal logging bot log\n";
+            }// else
+               // std::cerr << "N ";
+        } else {
             logImage(0);
-            setenv("LOG_THIS", "false", 1);
-            std::cerr << "pCal logging top log\n";
-        } else if (strcmp(getenv("LOG_THIS"), std::string("bottom").c_str()) == 0) {
             logImage(1);
-            setenv("LOG_THIS", "false", 1);
-            std::cerr << "pCal logging bot log\n";
-        }// else
-           // std::cerr << "N ";
-    } else {
-        logImage(0);
-        logImage(1);
-    }
+        }
 #endif
-
+    }
     // Send messages on outportals
     sendLinesOut();
     sendCornersOut();
     ballOn = ballDetected;
     updateVisionBall();
+    updateObstacleBox();
     sendCenterCircle();
 }
 
