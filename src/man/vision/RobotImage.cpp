@@ -38,6 +38,14 @@ RobotImage::RobotImage(int wd_, int ht_) //: robotVisionOut(base())
 {
     img_wd = wd_;
     img_ht = ht_;
+
+    bottom = new int[img_wd];
+    top = new int[img_wd];
+    maxbottom = new int[img_wd];
+    mintop = new int[img_wd];
+    prelim = new bool[img_wd];
+    evidence = new bool[img_wd];
+
     std::cout<<"[ ROBOT IMAGE] width = "<<wd_<<", height = "<<ht_<<std::endl;
 }
 
@@ -45,58 +53,41 @@ RobotImage::RobotImage(int wd_, int ht_) //: robotVisionOut(base())
 void RobotImage::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
                                       int* obstacleBox)
 {
-    int bottom[img_wd];      // not used
-    int top[img_wd];         // not used
-    int maxbottom[img_wd];   // lowest edge that points up
-    int mintop[img_wd];      // highest edge that points down
-    bool prelim[img_wd];     // is there evidence of an obstacle
-                             //    after our first round of checks?
-    bool evidence[img_wd];   // is there evidence of an obstacle in this column?
+    initAccumulators(obstacleBox);
 
-    initAccumulators(bottom, top, maxbottom, mintop,
-                     prelim, evidence, obstacleBox);
-
-    // printArray(maxbottom, img_wd, "MAX BOTTOM WAY BEFORE");
+    printArray(maxbottom, img_wd, "MAX BOTTOM WAY BEFORE");
 
     // Go through edges and determine which are "topmost" and "bottommost" ones
-    getBottomAndTopEdges(edges, mintop, maxbottom);
+    getBottomAndTopEdges(edges);
 
-    // printArray(maxbottom, img_wd, "MAX BOTTOM WAY AFTER");
+    printArray(maxbottom, img_wd, "MAX BOTTOM WAY AFTER");
 
     // Determine if a column has enough evidence of an obstacle
-    determinePrelimEvidence(whiteImage, img_wd, img_ht, maxbottom, prelim);
+    determinePrelimEvidence(whiteImage);
 
-    // printArray(prelim, img_wd, "PRELIM");
+    printArray(prelim, img_wd, "PRELIM");
 
     // Determine if we actually think there is an obstacle in this column
     //           based on cells in surrounding columns
-    determineFinalEvidence(img_wd, img_ht, maxbottom, prelim, evidence, obstacleBox);
+    determineFinalEvidence(obstacleBox);
 
-    // std::cout<<"CHecking for visual obstacle"<<std::endl;
-
-    // printArray(evidence, img_wd, "EVIDENCE");
-
-    obstacleBox[0] -= img_ht/2;
-    obstacleBox[1] -= img_ht/2;
-    obstacleBox[2] -= img_wd/2;
-    obstacleBox[3] -= img_wd/2;
+    printArray(evidence, img_wd, "EVIDENCE");
 }
 
-void RobotImage::initAccumulators(int* bottom, int* top, int* maxbottom, int* mintop,
-                                  bool* prelim, bool* evidence, int* obstacleBox)
+void RobotImage::initAccumulators(int* obstacleBox)
 {
     for (int i = 0; i < img_wd; i++) {
-        bottom[i] = 0;
-        top[i] = img_ht;
-        maxbottom[i] = img_ht;
-        mintop[i] = 0;
+        bottom[i] = img_ht;
+        top[i] = 0;
+        maxbottom[i] = 0;
+        mintop[i] = img_ht;
         prelim[i] = false;
         evidence[i] = false;
     }
 
     // {| top | bottom | left | right |} coordinate values
     obstacleBox[0] = -1;
-    obstacleBox[1] = img_ht;
+    obstacleBox[1] = 0;
     obstacleBox[2] = img_wd;
     obstacleBox[3] = 0;
 }
@@ -123,7 +114,7 @@ void RobotImage::printArray(bool* array, int size, std::string name)
     std::cout<<std::endl;
 }
 
-void RobotImage::getBottomAndTopEdges(EdgeList& edges, int* mintop, int* maxbottom)
+void RobotImage::getBottomAndTopEdges(EdgeList& edges)
 {
     // Get edges from vision
     AngleBinsIterator<Edge> abi(edges);
@@ -139,40 +130,35 @@ void RobotImage::getBottomAndTopEdges(EdgeList& edges, int* mintop, int* maxbott
         // don't want to get too high or low in the image
         if (y < 15 || y > (img_ht - 30) ) { continue; }
 
-        if (ang < 128 && y < maxbottom[x]) {
+        if (ang < 128 && y > maxbottom[x]) {
             maxbottom[x] = y;
-        } else if ( ang > 128 && y > mintop[x]) {
+        } else if ( ang > 128 && y < mintop[x]) {
             mintop[x] = y;
         }
     }
 }
 
-void RobotImage::determinePrelimEvidence(ImageLiteU8 whiteImage, int img_wd,
-                                         int img_ht, int* maxbottom, bool* prelim)
+void RobotImage::determinePrelimEvidence(ImageLiteU8 whiteImage)
 {
     // std::cout<<"Determine prelim evidence"<<std::endl;
     for (int i = 0; i < img_wd; i++) {
-        // std::cout<<"inside loop "<<i<<std::endl;
         // if there is an upward pointing edge in this column
         if (maxbottom[i] < img_ht && maxbottom[i] >= 0) {
             // this is the key business, look for mostly white between edge and top
             int w = 0;
-            for (int j = maxbottom[i]; j < img_ht; j++) { // loop from edge to top
-                // std::cout<<"tinier loop "<<j<<std::endl;
-                if (*whiteImage.pixelAddr(i-img_wd/2,j-img_ht/2) > 128) {
+            for (int j = 0; j < maxbottom[i]; j++) { // loop from edge to top
+                if (*(whiteImage.pixelAddr(i,j)) > 128) {
                     w++;
                 }
             }
-            // std::cout<<"White: "<<w<<std::endl;
-            if (w > (img_ht - maxbottom[i]) / 2) {
+            if (w > maxbottom[i] / 2) {
                 prelim[i] = true;
             }
         }
     }
 }
 
-void RobotImage::determineFinalEvidence(int img_wd, int img_ht, int* maxbottom,
-                                        bool* prelim, bool* evidence, int *obstacleBox)
+void RobotImage::determineFinalEvidence(int *obstacleBox)
 {
     // std::cout<<"Determine final evidence"<<std::endl;
 
@@ -199,7 +185,7 @@ void RobotImage::determineFinalEvidence(int img_wd, int img_ht, int* maxbottom,
             }
         }
 
-        // if (evidence[i]) { std::cout<<"EVIDENCE AT "<<i<<std::endl; }
+        if (evidence[i]) { std::cout<<"EVIDENCE AT "<<i<<std::endl; }
 
         // update box params
         if (evidence[i] && maxbottom[i] >=0 && maxbottom[i] < img_ht) {
@@ -207,7 +193,7 @@ void RobotImage::determineFinalEvidence(int img_wd, int img_ht, int* maxbottom,
             // if (maxbottom[i] < &obstacleBox[0]) { &obstacleBox[0] = maxbottom[i]; }
 
             // BOTTOM:
-            if (maxbottom[i] < obstacleBox[1]) { obstacleBox[1] = maxbottom[i]; }
+            if (maxbottom[i] > obstacleBox[1]) { obstacleBox[1] = maxbottom[i]; }
 
             // LEFT: This will only get set once, for first evidence found
             if (i < obstacleBox[2])   { obstacleBox[2] = i; }
@@ -215,8 +201,8 @@ void RobotImage::determineFinalEvidence(int img_wd, int img_ht, int* maxbottom,
             // RIGHT:
             if (i > obstacleBox[3])  { obstacleBox[3] = i; }
 
-            // std::cout<<"Obstacle box:"<<obstacleBox[0]<<", "<<obstacleBox[1]<<", "
-            //          <<obstacleBox[2]<<", "<<obstacleBox[3]<<std::endl;
+            std::cout<<"Obstacle box:"<<obstacleBox[0]<<", "<<obstacleBox[1]<<", "
+                     <<obstacleBox[2]<<", "<<obstacleBox[3]<<std::endl;
         }
     }
 }

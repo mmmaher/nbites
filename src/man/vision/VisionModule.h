@@ -59,8 +59,6 @@ public:
     const std::string getStringFromTxtFile(std::string path);
     Colors* getColorsFromLisp(nblog::SExpr* colors, int camera);
 
-    void updateObstacleBox();
-
     void setCalibrationParams(std::string robotName);
     void setCalibrationParams(int camera, std::string robotName);
     void setCalibrationParams(CalibrationParams* params, bool topCamera);
@@ -78,6 +76,7 @@ private:
     void sendCornersOut();
     void updateVisionBall();
     void sendCenterCircle();
+    void updateObstacleBox();
 
     Colors* colorParams[2];
     ImageFrontEnd* frontEnd[2];

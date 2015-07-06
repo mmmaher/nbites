@@ -75,6 +75,7 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
 		// don't get any space if we're running on the robot
 		debugSpace[i] = NULL;
 #endif
+        std::cout<<"VISION WID: "<<wd<<" "<<ht<<std::endl;
 		// Construct the lightweight debug images that know where the space is
 		if (i == 0) {
 			debugImage[i] = new DebugImage(wd, ht, debugSpace[0]);
@@ -101,7 +102,7 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
         edgeDetector[i]->fast(fast);
         hough[i]->fast(fast);
     }
-    robotImageObstacle = new RobotImage(wd/2, ht/2);
+    robotImageObstacle = new RobotImage(wd / 4, ht / 4);
 	field = new Field(wd / 2, ht / 2, homography[0]);
 #ifdef OFFLINE
 	// Here is an example of how to get access to the debug space. In this case the
@@ -245,6 +246,7 @@ void VisionModule::run_()
     sendCornersOut();
     ballOn = ballDetected;
     updateVisionBall();
+    // updateObstacleBox(160, 120);
     updateObstacleBox();
     sendCenterCircle();
 }
@@ -465,9 +467,11 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera)
 void VisionModule::updateObstacleBox()
 {
     // only want bottom camera
-    robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
-                                             *(edges[1]), obstacleBox);
+    // robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
+    //                                          *(edges[1]), obstacleBox);
 
+    robotImageObstacle->updateVisionObstacle(frontEnd[0]->whiteImage(),
+                                             *(edges[0]), obstacleBox);
 
     // std::cout<<"about to set message for obstacle vision"<<std::endl;
     portals::Message<messages::RobotObstacle> boxOut(0);
@@ -476,6 +480,29 @@ void VisionModule::updateObstacleBox()
     boxOut.get()->set_box_left(obstacleBox[2]);
     boxOut.get()->set_box_right(obstacleBox[3]);
     robotObstacleOut.setMessage(boxOut);
+
+    std::cout<<"Obstacle box 2:"<<obstacleBox[0]<<", "<<obstacleBox[1]<<", "
+             <<obstacleBox[2]<<", "<<obstacleBox[3]<<std::endl;
+
+#ifdef OFFLINE
+    // for (int i = 0; i < w*h; i++) {
+    //     if (whiteBools[i] == 1) {
+    //         field->drawPoint(i%w, i/w, 2);
+    //     }
+    // }
+
+std::cout<<"HEwRE"<<std::endl;
+
+    // bottom lines
+    // field->drawLine(obstacleBox[3],obstacleBox[1],obstacleBox[2],obstacleBox[1],4);
+    // field->drawLine(obstacleBox[3],obstacleBox[1],obstacleBox[3],0,4);
+    // field->drawLine(obstacleBox[2],0,obstacleBox[2],obstacleBox[1],4);
+
+    // field->drawLine(0,119,320,119,2);
+    // field->drawLine(160,120,160,0,2);
+
+
+#endif
 }
 
 void VisionModule::setCalibrationParams(std::string robotName) 

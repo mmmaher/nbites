@@ -32,19 +32,24 @@ protected:
     int getBoxRight();
 
 private:
-    void initAccumulators(int* bottom, int* top, int* maxbottom, int* mintop,
-                          bool* prelim, bool* evidence, int* obstacleBox);
-    void getBottomAndTopEdges(EdgeList& edges, int* mintop, int* maxbottom);
-    void determinePrelimEvidence(ImageLiteU8 whiteImage, int img_wd,
-                                 int img_ht, int* maxbottom, bool* prelim);
-    void determineFinalEvidence(int img_wd, int img_ht, int* maxbottom,
-                                bool* prelim, bool* evidence, int* obstacleBox);
+    void initAccumulators(int* obstacleBox);
+    void getBottomAndTopEdges(EdgeList& edges);
+    void determinePrelimEvidence(ImageLiteU8 whiteImage);
+    void determineFinalEvidence(int* obstacleBox);
 
     void printArray(int* array, int size, std::string name);
     void printArray(bool* array, int size, std::string name);
 
     int img_wd;
     int img_ht;
+
+    int* bottom;      // not used
+    int* top;         // not used
+    int* maxbottom;   // lowest edge that points up
+    int* mintop;      // highest edge that points down
+    bool* prelim;     // is there evidence of an obstacle
+                             //    after our first round of checks?
+    bool* evidence;   // is there evidence of an obstacle in this column?
 };
 
 } // namespace vision
