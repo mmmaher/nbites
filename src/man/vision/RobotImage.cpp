@@ -1,7 +1,8 @@
 /*
  * @file RobotImage.cpp
  * @author Megan Maher
- * @date July 2015
+ * @created July 2015
+ * @modified July 2015
  *                        -------------------
  *                       |  Robot Detection  |
  *                        -------------------
@@ -68,24 +69,29 @@ void RobotImage::printArray(bool* array, int size, std::string name)
     std::cout<<std::endl;
 }
 
+// @DEBUGGING
+// void RobotImage::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
+//                                       int* obstacleBox, int* whiteBools, int* edgeBools)
+
 // Run every frame from VisionModule.cpp
 void RobotImage::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
-                                      int* obstacleBox, int* whiteBools, int* edgeBools)
+                                      int* obstacleBox)
 {
     initAccumulators(obstacleBox);
 
-    // only here for debugging
-    for (int i = 0; i < img_wd*img_ht; i++) {
-        edgeBools[i] = 0;
-    }
-
     // Go through edges and determine which are "topmost" and "bottommost" ones
-    getBottomAndTopEdges(edges, edgeBools);
-
-    printArray(maxbottom, img_wd, "MAX BOTTOM AFTER");
+    getBottomAndTopEdges(edges);
 
     // Determine if a column has enough evidence of an obstacle
-    findObstacle(whiteImage, whiteBools, obstacleBox);
+    findObstacle(whiteImage, obstacleBox);
+
+    // @DEBUGGING
+    // for (int i = 0; i < img_wd*img_ht; i++) {
+    //     edgeBools[i] = 0;
+    // }
+    // getBottomAndTopEdges(edges, edgeBools);
+    // printArray(maxbottom, img_wd, "MAX BOTTOM AFTER");
+    // findObstacle(whiteImage, whiteBools, obstacleBox);
 }
 
 void RobotImage::initAccumulators(int* obstacleBox)
@@ -104,11 +110,8 @@ void RobotImage::initAccumulators(int* obstacleBox)
     obstacleBox[3] = -1;
 }
 
-void RobotImage::getBottomAndTopEdges(EdgeList& edges, int* edgeBools)
+void RobotImage::getBottomAndTopEdges(EdgeList& edges)
 {
-    // int max = 0;
-    // int num = 0;
-    // int aaaa = 0;
     // Get edges from vision
     AngleBinsIterator<Edge> abi(edges);
     for (Edge* e = *abi; e; e = *++abi){
@@ -117,19 +120,11 @@ void RobotImage::getBottomAndTopEdges(EdgeList& edges, int* edgeBools)
 
         int x = e->x() + img_wd/2;
         int y = img_ht/2 - e->y();
-        // int x = e->x() + img_wd/2;
-        // int y = -1*e->y() + img_ht/2;
-        // int mag = e->mag();         // magnitude - could be useful?
         int ang = e->angle();
+        // int mag = e->mag();      // magnitude - could be useful later?
 
-        // if (y < img_ht - 30)
-            edgeBools[img_wd * y + x] = 1;
-
-        // if (y > max && y < img_ht - 30) {
-        //     max = y;
-        //     num = x;
-        //     aaaa = ang;
-        // }
+        //@DEBUGGING
+        // edgeBools[img_wd * y + x] = 1;
 
         // don't want to get too high or low in the image
         if (y < BARRIER_TOP || y > img_ht - BARRIER_BOT ) { continue; }
@@ -141,10 +136,9 @@ void RobotImage::getBottomAndTopEdges(EdgeList& edges, int* edgeBools)
             mintop[x] = y;
         }
     }
-    // std::cout<<"MAX: "<<max<<", "<<num<<", "<<aaaa<<std::endl;
 }
 
-void RobotImage::findObstacle(ImageLiteU8 whiteImage, int* whiteBools, int* obstacleBox)
+void RobotImage::findObstacle(ImageLiteU8 whiteImage, int* obstacleBox)
 {
     int maxLength = 0;          // max run length we've found so far
     int maxStart = -1;          // start of the max run
@@ -188,6 +182,7 @@ void RobotImage::findObstacle(ImageLiteU8 whiteImage, int* whiteBools, int* obst
                 currLength++;
             }
         }
+        // @DEBUGGING
         // std::cout<<"    MAX: l = "<<maxLength<<", s = "<<maxStart<<", b = "<<maxBot<<std::endl;
         // std::cout<<"    CURR: l = "<<currLength<<", s = "<<currStart<<", b = "<<currBot<<std::endl;
     }
@@ -198,8 +193,6 @@ void RobotImage::findObstacle(ImageLiteU8 whiteImage, int* whiteBools, int* obst
         maxStart = currStart;
         maxBot = currBot;
     }
-
-    // std::cout<<"maxLength "<<maxLength<<", maxStart "<<maxStart<<", maxBot "<<maxBot<<std::endl;
 
     if (maxLength > MIN_LENGTH) {
         // now update obstacle box

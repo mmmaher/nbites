@@ -145,7 +145,6 @@ VisionModule::~VisionModule()
         delete ballDetector[i];
         delete field[i];
     }
-    delete field;
 }
 
 // TODO use horizon on top image
@@ -311,7 +310,8 @@ void VisionModule::sendLinesOut()
         }
     }
 
-    pLines.set_horizon_dist(field->horizonDist());
+    // for top image only
+    pLines.set_horizon_dist(field[0]->horizonDist());
 
     portals::Message<messages::FieldLines> linesOutMessage(&pLines);
     linesOut.setMessage(linesOutMessage);
@@ -495,14 +495,17 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera)
 
 void VisionModule::updateObstacleBox()
 {
-    int ht = 120;
-    int wd = 160;
-    int whiteBools[ht*wd];
-    int edgeBools[wd*ht];
-    // only want bottom camera
+    // @DEBUGGING
+    // int ht = 120;
+    // int wd = 160;
+    // int whiteBools[ht*wd];
+    // int edgeBools[wd*ht];
+    // robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
+    //                                      *(edges[1]), obstacleBox, whiteBools, edgeBools);
 
+    // only want bottom camera
     robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
-                                             *(edges[1]), obstacleBox, whiteBools, edgeBools);
+                                             *(edges[1]), obstacleBox);
 
     // std::cout<<"about to set message for obstacle vision"<<std::endl;
     portals::Message<messages::RobotObstacle> boxOut(0);
@@ -512,22 +515,22 @@ void VisionModule::updateObstacleBox()
     boxOut.get()->set_box_right(obstacleBox[3]);
     robotObstacleOut.setMessage(boxOut);
 
-    std::cout<<"Obstacle box 2:"<<obstacleBox[0]<<", "<<obstacleBox[1]<<", "
+    //@DEBUGGING
+    std::cout<<"Obstacle box in VISION:"<<obstacleBox[0]<<", "<<obstacleBox[1]<<", "
              <<obstacleBox[2]<<", "<<obstacleBox[3]<<std::endl;
 
 #ifdef OFFLINE
+    //@DEBUGGING
     // for (int i = 0; i < w*h; i++) {
     //     if (whiteBools[i] == 1) {
-    //         field->drawPoint(i%w, i/w, 2);
+    //         field[1]->drawPoint(i%w, i/w, 2);
     //     }
     // }
-
-    for (int i = 0; i < wd*ht; i++) {
-        if (edgeBools[i] == 1) {
-            field[1]->drawPoint(i%wd, i/wd, 3);
-        }
-    }
-
+    // for (int i = 0; i < wd*ht; i++) {
+    //     if (edgeBools[i] == 1) {
+    //         field[1]->drawPoint(i%wd, i/wd, 3);
+    //     }
+    // }
     // bottom lines
     field[1]->drawLine(obstacleBox[3]-1,obstacleBox[1],obstacleBox[2]+1,obstacleBox[1],4);
     field[1]->drawLine(obstacleBox[3]-1,obstacleBox[1],obstacleBox[3]-1,0,4);
