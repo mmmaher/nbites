@@ -145,6 +145,7 @@ VisionModule::~VisionModule()
         delete ballDetector[i];
         delete field[i];
     }
+    delete field;
 }
 
 // TODO use horizon on top image
@@ -309,6 +310,8 @@ void VisionModule::sendLinesOut()
             pLine->set_index(static_cast<int>(line.index()));
         }
     }
+
+    pLines.set_horizon_dist(field->horizonDist());
 
     portals::Message<messages::FieldLines> linesOutMessage(&pLines);
     linesOut.setMessage(linesOutMessage);
