@@ -50,8 +50,8 @@ message VisionObstacle
 
 message RobotObstacle
 {
-    optional sint32 box_top = 1;
-    optional sint32 box_bottom = 2;
-    optional sint32 box_left = 3;
-    optional sint32 box_right = 4;
+    optional float closest_y = 1;
+    optional float box_bottom = 2;
+    optional float box_left = 3;
+    optional float box_right = 4;
 }

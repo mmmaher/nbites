@@ -119,7 +119,7 @@ private:
 
     // obstacleBox
     RobotObstacle* robotImageObstacle;
-    int obstacleBox[4];
+    float obstacleBox[4];
 // #
 };
 

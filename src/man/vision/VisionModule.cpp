@@ -34,7 +34,7 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
       blackStar_(false)
 {
     // this is in here because this module is usually run with the "top" parameters
-    // and with the tool we are just running the bottom parameters
+    // and with the tool for Obstalce vision we are just running the bottom parameters
 #ifdef OFFLINE
     wd = 640;
     ht = 480;
@@ -87,7 +87,6 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
 		// don't get any space if we're running on the robot
 		debugSpace[i] = NULL;
 #endif
-        std::cout<<"VISION WID: "<<wd<<" "<<ht<<std::endl;
 		// Construct the lightweight debug images that know where the space is
 		if (i == 0) {
 			debugImage[i] = new DebugImage(wd, ht, debugSpace[0]);
@@ -495,47 +494,18 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera)
 
 void VisionModule::updateObstacleBox()
 {
-    // @DEBUGGING
-    // int ht = 120;
-    // int wd = 160;
-    // int whiteBools[ht*wd];
-    // int edgeBools[wd*ht];
-    // robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
-    //                                      *(edges[1]), obstacleBox, whiteBools, edgeBools);
-
     // only want bottom camera
     robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
-                                             *(edges[1]), obstacleBox);
+                                             *(edges[1]), obstacleBox,
+                                             homography[1]);
 
     // std::cout<<"about to set message for obstacle vision"<<std::endl;
     portals::Message<messages::RobotObstacle> boxOut(0);
-    boxOut.get()->set_box_top(obstacleBox[0]);
+    boxOut.get()->set_closest_y(obstacleBox[0]);
     boxOut.get()->set_box_bottom(obstacleBox[1]);
     boxOut.get()->set_box_left(obstacleBox[2]);
     boxOut.get()->set_box_right(obstacleBox[3]);
     robotObstacleOut.setMessage(boxOut);
-
-    //@DEBUGGING
-    std::cout<<"Obstacle box in VISION:"<<obstacleBox[0]<<", "<<obstacleBox[1]<<", "
-             <<obstacleBox[2]<<", "<<obstacleBox[3]<<std::endl;
-
-#ifdef OFFLINE
-    //@DEBUGGING
-    // for (int i = 0; i < w*h; i++) {
-    //     if (whiteBools[i] == 1) {
-    //         field[1]->drawPoint(i%w, i/w, 2);
-    //     }
-    // }
-    // for (int i = 0; i < wd*ht; i++) {
-    //     if (edgeBools[i] == 1) {
-    //         field[1]->drawPoint(i%wd, i/wd, 3);
-    //     }
-    // }
-    // bottom lines
-    field[1]->drawLine(obstacleBox[3]-1,obstacleBox[1],obstacleBox[2]+1,obstacleBox[1],4);
-    field[1]->drawLine(obstacleBox[3]-1,obstacleBox[1],obstacleBox[3]-1,0,4);
-    field[1]->drawLine(obstacleBox[2]+1,0,obstacleBox[2]+1,obstacleBox[1],4);
-#endif
 }
 
 void VisionModule::setCalibrationParams(std::string robotName) 
