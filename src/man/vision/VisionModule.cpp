@@ -33,6 +33,13 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
       centerCircleDetected(false),
       blackStar_(false)
 {
+    // this is in here because this module is usually run with the "top" parameters
+    // and with the tool we are just running the bottom parameters
+#ifdef OFFLINE
+    wd = 640;
+    ht = 480;
+#endif
+
     std:: string colorPath, calibrationPath;
     #ifdef OFFLINE
         colorPath =  calibrationPath = std::string(getenv("NBITES_DIR"));
@@ -64,6 +71,11 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
         kinematics[i] = new Kinematics(i == 0);
         homography[i] = new FieldHomography(i == 0);
         fieldLines[i] = new FieldLineList();
+        if (i == 0) {
+            field[i] = new Field(wd / 2, ht / 2, homography[i]);
+        } else {
+            field[i] = new Field(wd / 4, ht / 4, homography[i]);
+        }
 #ifdef OFFLINE
 		// Get the appropriate amount of space for the Debug Image
 		if (i == 0) {
@@ -99,16 +111,15 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
 
         bool fast = true;
         frontEnd[i]->fast(fast);
-        edgeDetector[i]->fast(fast);
         hough[i]->fast(fast);
+
+#ifdef OFFLINE
+        // Here is an example of how to get access to the debug space. In this case the
+        // field class only runs on the top image so it only needs that one
+        field[i]->setDebugImage(debugImage[i]);
+#endif
     }
     robotImageObstacle = new RobotImage(wd / 4, ht / 4);
-	field = new Field(wd / 2, ht / 2, homography[0]);
-#ifdef OFFLINE
-	// Here is an example of how to get access to the debug space. In this case the
-	// field class only runs on the top image so it only needs that one
-	field->setDebugImage(debugImage[0]);
-#endif
     setCalibrationParams(robotName);
 }
 
@@ -132,6 +143,7 @@ VisionModule::~VisionModule()
         delete cornerDetector[i];
         delete centerCircleDetector[i];
         delete ballDetector[i];
+        delete field[i];
     }
 }
 
@@ -186,17 +198,18 @@ void VisionModule::run_()
         // Approximate brightness gradient
         edgeDetector[i]->gradient(yImage);
 
+        // field needs the color images
+        field[i]->setImages(frontEnd[0]->whiteImage(), frontEnd[0]->greenImage(),
+                            frontEnd[0]->orangeImage());
+
 		// only calculate the field in the top camera
 		if (i ==0) {
-			// field needs the color images
-			field->setImages(frontEnd[0]->whiteImage(), frontEnd[0]->greenImage(),
-							 frontEnd[0]->orangeImage());
-			GeoLine horizon = homography[0]->horizon(image->width() / 2);
+            GeoLine horizon = homography[0]->horizon(image->width() / 2);
 			double x1, x2, y1, y2;
 			horizon.endPoints(x1, y1, x2, y2);
 			int hor = static_cast<int>(y1);
 			hor = image->height() / 4 - hor;
-			field->findGreenHorizon(hor, 0.0f);
+			field[0]->findGreenHorizon(hor, 0.0f);
 		}
 
         // Run edge detection
@@ -246,7 +259,6 @@ void VisionModule::run_()
     sendCornersOut();
     ballOn = ballDetected;
     updateVisionBall();
-    // updateObstacleBox(160, 120);
     updateObstacleBox();
     sendCenterCircle();
 }
@@ -423,10 +435,10 @@ const std::string VisionModule::getStringFromTxtFile(std::string path)
 		int fieldHorizon = params->get(1)->find("FieldHorizon")->get(1)->valueAsInt();
 		int debugHorizon = params->get(1)->find("DebugHorizon")->get(1)->valueAsInt();
 		int debugField = params->get(1)->find("DebugField")->get(1)->valueAsInt();
-		field->setDrawCameraHorizon(cameraHorizon);
-		field->setDrawFieldHorizon(fieldHorizon);
-		field->setDebugHorizon(debugHorizon);
-		field->setDebugFieldEdge(debugField);
+		field[0]->setDrawCameraHorizon(cameraHorizon);
+		field[0]->setDrawFieldHorizon(fieldHorizon);
+		field[0]->setDebugHorizon(debugHorizon);
+		field[0]->setDebugFieldEdge(debugField);
 	}
 #endif
 
@@ -480,12 +492,14 @@ Colors* VisionModule::getColorsFromLisp(nblog::SExpr* colors, int camera)
 
 void VisionModule::updateObstacleBox()
 {
+    int ht = 120;
+    int wd = 160;
+    int whiteBools[ht*wd];
+    int edgeBools[wd*ht];
     // only want bottom camera
-    // robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
-    //                                          *(edges[1]), obstacleBox);
 
-    robotImageObstacle->updateVisionObstacle(frontEnd[0]->whiteImage(),
-                                             *(edges[0]), obstacleBox);
+    robotImageObstacle->updateVisionObstacle(frontEnd[1]->whiteImage(),
+                                             *(edges[1]), obstacleBox, whiteBools, edgeBools);
 
     // std::cout<<"about to set message for obstacle vision"<<std::endl;
     portals::Message<messages::RobotObstacle> boxOut(0);
@@ -505,17 +519,16 @@ void VisionModule::updateObstacleBox()
     //     }
     // }
 
-std::cout<<"HEwRE"<<std::endl;
+    for (int i = 0; i < wd*ht; i++) {
+        if (edgeBools[i] == 1) {
+            field[1]->drawPoint(i%wd, i/wd, 3);
+        }
+    }
 
     // bottom lines
-    // field->drawLine(obstacleBox[3],obstacleBox[1],obstacleBox[2],obstacleBox[1],4);
-    // field->drawLine(obstacleBox[3],obstacleBox[1],obstacleBox[3],0,4);
-    // field->drawLine(obstacleBox[2],0,obstacleBox[2],obstacleBox[1],4);
-
-    // field->drawLine(0,119,320,119,2);
-    // field->drawLine(160,120,160,0,2);
-
-
+    field[1]->drawLine(obstacleBox[3]-1,obstacleBox[1],obstacleBox[2]+1,obstacleBox[1],4);
+    field[1]->drawLine(obstacleBox[3]-1,obstacleBox[1],obstacleBox[3]-1,0,4);
+    field[1]->drawLine(obstacleBox[2]+1,0,obstacleBox[2]+1,obstacleBox[1],4);
 #endif
 }
 

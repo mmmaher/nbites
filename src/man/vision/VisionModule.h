@@ -94,7 +94,7 @@ private:
     FieldHomography* homography[2];
     FieldLineList* fieldLines[2];
 	DebugImage* debugImage[2];
-	Field* field;
+	Field* field[2];
     GoalboxDetector* boxDetector[2];
     CornerDetector* cornerDetector[2];
     CenterCircleDetector* centerCircleDetector[2];
