@@ -3,7 +3,7 @@
  * |  Robot Detection 2015 |
  *  -----------------------
  *
- * @file RobotImage.h
+ * @file RobotObstacle.h
  * @created July 2015
  * @modified July 2015
  */
@@ -16,7 +16,7 @@
 namespace man {
 namespace vision {
 
-class RobotImage
+class RobotObstacle
 {
     const int MAX_DIST = 4;     // max columns we can have "empty" in a row for a run
     const int MIN_LENGTH = 35;  // min number for a run
@@ -24,7 +24,7 @@ class RobotImage
     const int BARRIER_BOT = 30; // amount on bot of image we don't want to process
 
 public:
-    RobotImage(int wd_, int ht_);
+    RobotObstacle(int wd_, int ht_);
     void updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges, int* obstacleBox);
     // @DEBUGGING
     // void updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges, int* obstacleBox,

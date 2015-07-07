@@ -16,7 +16,7 @@ SET( VISION_SRCS
   Hough.cpp
   Vision.cpp
   BallDetector.cpp
-  RobotImage.cpp
+  RobotObstacle.cpp
   )
 
 IF (UNIX AND NOT APPLE)

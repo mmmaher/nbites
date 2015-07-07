@@ -1,5 +1,5 @@
 /*
- * @file RobotImage.cpp
+ * @file RobotObstacle.cpp
  * @author Megan Maher
  * @created July 2015
  * @modified July 2015
@@ -30,12 +30,12 @@
  *              could be using parts of field cross / field lines
  */
 
-#include "RobotImage.h"
+#include "RobotObstacle.h"
 
 namespace man {
 namespace vision {
 
-RobotImage::RobotImage(int wd_, int ht_)
+RobotObstacle::RobotObstacle(int wd_, int ht_)
 {
     std::cout<<"[ ROBOT IMAGE] width = "<<wd_<<", height = "<<ht_<<std::endl;
     img_wd = wd_;
@@ -47,7 +47,7 @@ RobotImage::RobotImage(int wd_, int ht_)
     mintop = new int[img_wd];
 }
 
-void RobotImage::printArray(int* array, int size, std::string name)
+void RobotObstacle::printArray(int* array, int size, std::string name)
 {
     std::cout<<name<<": ["<<array[0]<<"]";
     for (int i = 1; i < size; i++) {
@@ -56,7 +56,7 @@ void RobotImage::printArray(int* array, int size, std::string name)
     std::cout<<std::endl;
 }
 
-void RobotImage::printArray(bool* array, int size, std::string name)
+void RobotObstacle::printArray(bool* array, int size, std::string name)
 {
     std::cout<<name<<": ["<<array[0]<<"]";
     for (int i = 1; i < size; i++) {
@@ -70,11 +70,11 @@ void RobotImage::printArray(bool* array, int size, std::string name)
 }
 
 // @DEBUGGING
-// void RobotImage::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
+// void RobotObstacle::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
 //                                       int* obstacleBox, int* whiteBools, int* edgeBools)
 
 // Run every frame from VisionModule.cpp
-void RobotImage::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
+void RobotObstacle::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
                                       int* obstacleBox)
 {
     initAccumulators(obstacleBox);
@@ -94,7 +94,7 @@ void RobotImage::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges,
     // findObstacle(whiteImage, whiteBools, obstacleBox);
 }
 
-void RobotImage::initAccumulators(int* obstacleBox)
+void RobotObstacle::initAccumulators(int* obstacleBox)
 {
     for (int i = 0; i < img_wd; i++) {
         bottom[i] = img_ht;
@@ -110,7 +110,7 @@ void RobotImage::initAccumulators(int* obstacleBox)
     obstacleBox[3] = -1;
 }
 
-void RobotImage::getBottomAndTopEdges(EdgeList& edges)
+void RobotObstacle::getBottomAndTopEdges(EdgeList& edges)
 {
     // Get edges from vision
     AngleBinsIterator<Edge> abi(edges);
@@ -138,7 +138,7 @@ void RobotImage::getBottomAndTopEdges(EdgeList& edges)
     }
 }
 
-void RobotImage::findObstacle(ImageLiteU8 whiteImage, int* obstacleBox)
+void RobotObstacle::findObstacle(ImageLiteU8 whiteImage, int* obstacleBox)
 {
     int maxLength = 0;          // max run length we've found so far
     int maxStart = -1;          // start of the max run

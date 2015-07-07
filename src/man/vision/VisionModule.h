@@ -14,7 +14,7 @@
 #include "Field.h"
 
 #include "BallDetector.h"
-#include "RobotImage.h"
+#include "RobotObstacle.h"
 #include "BallModel.pb.h"
 #include "InertialState.pb.h"
 #include "VisionRobot.pb.h"
@@ -118,7 +118,7 @@ private:
     size_t image_index;
 
     // obstacleBox
-    RobotImage* robotImageObstacle;
+    RobotObstacle* robotImageObstacle;
     int obstacleBox[4];
 // #
 };

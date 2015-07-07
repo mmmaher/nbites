@@ -119,7 +119,7 @@ VisionModule::VisionModule(int wd, int ht, std::string robotName)
         field[i]->setDebugImage(debugImage[i]);
 #endif
     }
-    robotImageObstacle = new RobotImage(wd / 4, ht / 4);
+    robotImageObstacle = new RobotObstacle(wd / 4, ht / 4);
     setCalibrationParams(robotName);
 }
 
