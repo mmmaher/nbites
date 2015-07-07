@@ -1,33 +1,11 @@
 /*
+ *  -----------------------
+ * |  Robot Detection 2015 |
+ *  -----------------------
  * @file RobotObstacle.cpp
  * @author Megan Maher
  * @created July 2015
  * @modified July 2015
- *                        -------------------
- *                       |  Robot Detection  |
- *                        -------------------
- * This module is very simple and has many opporunities for improvement.
- * We go through all edges found previously in vision, exlude the ones
- * that are part of hough lines, then look to find the bottom-most edge
- * and the top-most edge in each column of the image.
- *
- * Then, for each bottom edge, if it is not too far down or far up in
- * the image, if more than half the pixels above the edge are white,
- * we consider that there is preliminary evidence in the column.
- *
- * Then, going through the preliminary evidence column by column, if half
- * of the surrounding columns have preliminay evidence, we consider this
- * column to have enough evidence to be considered an obstacle.
- *
- * After going through all this evidence, we build a box that constricts
- * the obstacle, and update the "obstacleBox" that exists in the Vision
- * Module and is then passed out as a protobuf.
- *
- * Many opportunities for further work.
- *      - Dealing with field crosses and center circle in image
- *      - Doesn't detect robot feet
- *      - obstacleBox is not precise at all:
- *              could be using parts of field cross / field lines
  */
 
 #include "RobotObstacle.h"
@@ -82,7 +60,7 @@ void RobotObstacle::updateVisionObstacle(ImageLiteU8 whiteImage, EdgeList& edges
     // Go through edges and determine which are "topmost" and "bottommost" ones
     getBottomAndTopEdges(edges);
 
-    // Determine if a column has enough evidence of an obstacle
+    // Find constricting box of obstacle in image coordinates
     findObstacle(whiteImage, obstacleBox);
 
     // @DEBUGGING
@@ -153,7 +131,7 @@ void RobotObstacle::findObstacle(ImageLiteU8 whiteImage, int* obstacleBox)
         int w = 0;
         for (int j = 0; j < maxbottom[i]; j++) {
             // this is the key business, look for mostly white between edge and top
-            if (*(whiteImage.pixelAddr(i,j)) > 128) {
+            if (*(whiteImage.pixelAddr(i,j)) > WHITE_CONFIDENCE_THRESH) {
                 w++;
             }
         }
