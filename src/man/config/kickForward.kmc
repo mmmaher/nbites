@@ -14,9 +14,9 @@
  loop = false ;
  autoComTra = false ;
  ignoreHead = false ;
- numberOfPhases = 7 ;
+ numberOfPhases = 8 ;
  phaseParameters = [
- {
+  {
  duration = 500 ;
  leftFootTra1 = {x = 0 ; y = 55 ; z = -230 ;};
  leftFootTra2 = {x = 0 ; y = 55 ; z = -230 ;};
@@ -42,8 +42,8 @@
  },
  {
  duration = 500 ;
- leftFootTra1 = {x = 0 ; y = -10 ; z = -230 ;};
- leftFootTra2 = {x = 0 ; y = -10 ; z = -230 ;};
+ leftFootTra1 = {x = 0 ; y = -8 ; z = -230 ;};
+ leftFootTra2 = {x = 0 ; y = -8 ; z = -230 ;};
  leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
  rightFootTra1 = {x = 0 ; y = -115 ; z = -225 ;};
@@ -66,8 +66,8 @@
  },
  {
  duration = 250 ;
- leftFootTra1 = {x = 0 ; y = -10 ; z = -230 ;};
- leftFootTra2 = {x = 0 ; y = -10 ; z = -230 ;};
+ leftFootTra1 = {x = 0 ; y = -8 ; z = -230 ;};
+ leftFootTra2 = {x = 0 ; y = -8 ; z = -230 ;};
  leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
  rightFootTra1 = {x = 0 ; y = -100 ; z = -200 ;};
@@ -90,8 +90,8 @@
  },
  {
  duration = 250 ;
- leftFootTra1 = {x = 0 ; y = -10 ; z = -230 ;};
- leftFootTra2 = {x = 0 ; y = -10 ; z = -230 ;};
+ leftFootTra1 = {x = 0 ; y = -8 ; z = -230 ;};
+ leftFootTra2 = {x = 0 ; y = -8 ; z = -230 ;};
  leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
  rightFootTra1 = {x = -90 ; y = -100 ; z = -160 ;};
@@ -114,8 +114,8 @@
  },
  {
  duration = 125 ;
- leftFootTra1 = {x = 0 ; y = -10 ; z = -230 ;};
- leftFootTra2 = {x = 0 ; y = -10 ; z = -230 ;};
+ leftFootTra1 = {x = 0 ; y = -8 ; z = -230 ;};
+ leftFootTra2 = {x = 0 ; y = -8 ; z = -230 ;};
  leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
  rightFootTra1 = {x = 70.2095 ; y = -100 ; z = -190 ;};
@@ -138,12 +138,12 @@
  },
  {
  duration = 500 ;
- leftFootTra1 = {x = 0 ; y = -10 ; z = -230 ;};
- leftFootTra2 = {x = 0 ; y = -10 ; z = -230 ;};
+ leftFootTra1 = {x = 0 ; y = -8 ; z = -230 ;};
+ leftFootTra2 = {x = 0 ; y = -8 ; z = -230 ;};
  leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
- rightFootTra1 = {x = -17.6936 ; y = -100 ; z = -180 ;};
- rightFootTra2 = {x = -13.9187 ; y = -100 ; z = -190 ;};
+ rightFootTra1 = {x = -17.6936 ; y = -90 ; z = -180 ;};
+ rightFootTra2 = {x = -13.9187 ; y = -90 ; z = -180 ;};
  rightFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  rightFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
  leftArmTra1 = {x = 0 ; y = 150 ; z = 150 ;};
@@ -161,27 +161,51 @@
  odometryOffset = {x = 0 ; y = 0 ; z = 0 ;};
  },
  {
- duration = 1000 ;
+ duration = 500 ;
  leftFootTra1 = {x = 0 ; y = 25 ; z = -230 ;};
+ leftFootTra2 = {x = 0 ; y = 25 ; z = -230 ;};
+ leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
+ leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
+ rightFootTra1 = {x = 0 ; y = -70 ; z = -225 ;};
+ rightFootTra2 = {x = 0 ; y = -70 ; z = -225 ;};
+ rightFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
+ rightFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
+ leftArmTra1 = {x = 0 ; y = 120 ; z = 80 ;};
+ leftArmTra2 = {x = 0 ; y = 120 ; z = 80 ;};
+ leftHandRot1 = {x = 0 ; y = 1 ; z = 0.5 ;};
+ leftHandRot2 = {x = 0 ; y = 1 ; z = 0.5 ;};
+ rightArmTra1 = {x = 0 ; y = -120 ; z = 80 ;};
+ rightArmTra2 = {x = 0 ; y = -120 ; z = 80 ;};
+ rightHandRot1 = {x = 0 ; y = 1 ; z = -0.5 ;};
+ rightHandRot2 = {x = 0 ; y = 1 ; z = -0.5 ;};
+ comTra1 = {x = 10 ; y = -5 ;};
+ comTra2 = {x = 10 ; y = -5 ;};
+ headTra1 = {x = -2 ; y = -0.5 ;};
+ headTra2 = {x = -2 ; y = -0.5 ;};
+ odometryOffset = {x = 0 ; y = 0 ; z = 0 ;};
+ },
+ {
+ duration = 1000 ;
+ leftFootTra1 = {x = 0 ; y = 55 ; z = -230 ;};
  leftFootTra2 = {x = 0 ; y = 55 ; z = -230 ;};
  leftFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  leftFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
- rightFootTra1 = {x = 0 ; y = -85 ; z = -230 ;};
+ rightFootTra1 = {x = 0 ; y = -55 ; z = -230 ;};
  rightFootTra2 = {x = 0 ; y = -55 ; z = -230 ;};
  rightFootRot1 = {x = 0 ; y = 0 ; z = 0 ;};
  rightFootRot2 = {x = 0 ; y = 0 ; z = 0 ;};
- leftArmTra1 = {x = 0 ; y = 150 ; z = 80 ;};
- leftArmTra2 = {x = 0 ; y = 150 ; z = 80 ;};
- leftHandRot1 = {x = 0 ; y = 0 ; z = 0 ;};
- leftHandRot2 = {x = 0 ; y = 0 ; z = 0 ;};
- rightArmTra1 = {x = 0 ; y = -150 ; z = 150 ;};
- rightArmTra2 = {x = 0 ; y = -150 ; z = 150 ;};
- rightHandRot1 = {x = 0 ; y = 0 ; z = 0 ;};
- rightHandRot2 = {x = 0 ; y = 0 ; z = 0 ;};
- comTra1 = {x = 10 ; y = 0 ;};
- comTra2 = {x = 10 ; y = 0 ;};
+ leftArmTra1 = {x = 0 ; y = 120 ; z = 80 ;};
+ leftArmTra2 = {x = 0 ; y = 120 ; z = 80 ;};
+ leftHandRot1 = {x = 0 ; y = 1 ; z = 0.5 ;};
+ leftHandRot2 = {x = 0 ; y = 1 ; z = 0.5 ;};
+ rightArmTra1 = {x = 0 ; y = -120 ; z = 80 ;};
+ rightArmTra2 = {x = 0 ; y = -120 ; z = 80 ;};
+ rightHandRot1 = {x = 0 ; y = 1 ; z = -0.5 ;};
+ rightHandRot2 = {x = 0 ; y = 1 ; z = -0.5 ;};
+ comTra1 = {x = 10 ; y = 5 ;};
+ comTra2 = {x = 10 ; y = 5 ;};
  headTra1 = {x = 0 ; y = 0 ;};
  headTra2 = {x = 0 ; y = 0 ;};
  odometryOffset = {x = 0 ; y = 0 ; z = 0 ;};
- }
+ },
  ];
