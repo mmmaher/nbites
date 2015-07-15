@@ -114,6 +114,7 @@ private:
     // obstacleBox
     RobotObstacle* robotImageObstacle;
     float obstacleBox[4];
+    bool boxObstacle;
 };
 
 }

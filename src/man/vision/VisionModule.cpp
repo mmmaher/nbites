@@ -283,7 +283,7 @@ void VisionModule::run_()
 
         PROF_EXIT2(P_VISION_TOP, P_VISION_BOT, i==0)
 #ifdef USE_LOGGING
-        logImage(i);
+        // logImage(i);
 #endif
     }
     double topTotal;
@@ -336,7 +336,14 @@ void VisionModule::run_()
     outportalVisionField();
 
     PROF_ENTER(P_OBSTACLE)
+
+    boxObstacle = false;
     updateObstacleBox();
+#ifdef USE_LOGGING
+    if (boxObstacle) {
+        logImage(1);
+    }
+#endif
 
     PROF_EXIT(P_OBSTACLE)
 
@@ -479,6 +486,10 @@ void VisionModule::updateObstacleBox()
     boxOut.get()->set_box_left(obstacleBox[2]);
     boxOut.get()->set_box_right(obstacleBox[3]);
     robotObstacleOut.setMessage(boxOut);
+
+    if (obstacleBox[0] != -1) {
+        boxObstacle = true;
+    }
 
     // printf("Obstacle Box VISION: (%g, %g, %g, %g)\n", obstacleBox[0],
     //         obstacleBox[1], obstacleBox[2], obstacleBox[3]);
