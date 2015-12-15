@@ -75,6 +75,9 @@ private:
 #endif
     void outportalVisionField();
     void updateObstacleBox();
+    void hackGradient(int v);
+    int getValue(int* matrix, int* gradMatrix);
+    int getFuzzyValue(int gradientValue);
 
     Colors* colorParams[2];
     ImageFrontEnd* frontEnd[2];
