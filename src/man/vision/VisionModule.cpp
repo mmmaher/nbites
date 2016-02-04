@@ -282,7 +282,7 @@ void VisionModule::run_()
         PROF_EXIT2(P_VISION_TOP, P_VISION_BOT, i==0)
 
         std::cout<<"IMAGE WIDTH HEIGHT: "<<image->width()<<", "<<image->height()<<std::endl;
-        hackGradient(i);
+        hackGradient(i, edgeDetector[i]);
 #ifdef USE_LOGGING
         logImage(i);
 #endif
@@ -496,15 +496,15 @@ int VisionModule::getValue(int* matrix, int* gradMatrix) {
 }
 
 int VisionModule::getFuzzyValue(int gradientValue) {
-    int lowerFuzzy = 100;
-    int upperFuzzy = 200;
+    int lowerFuzzy = 0;
+    int upperFuzzy = 100;
 
     if (gradientValue <= lowerFuzzy) { return 1; }
     if (gradientValue >= upperFuzzy) { return 255; }
-    return (gradientValue-100)*255 / 100;
+    return (gradientValue - lowerFuzzy)*255 / 100;
 }
 
-void VisionModule::hackGradient(int v)
+void VisionModule::hackGradient(int v, EdgeDetector* ed)
 {
     int xmatrix [9] = { -1,0,1,-2,0,2,-1,0,1 };
     int ymatrix [9] = { 1,2,1,0,0,0,-1,-2,-1 };
@@ -526,29 +526,37 @@ void VisionModule::hackGradient(int v)
     for (int j = 1; j < m_height-1; ++j) {
         // if (j == 0) { std::cout<<"{ "; }
         // else { std::cout<<", { "; }
-        for (int i = 1; i < m_width/2-1; ++i) {
+        for (int i = 1; i < m_width-1; ++i) {
             // if (i != 0) { std::cout<", "; }
-            int* matrix = new int[9];
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i-1,j-1));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i,j-1));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i+1,j-1));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i-1,j));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i,j));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i+1,j));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i-1,j+1));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i,j+1));
-            matrix[0] = *(frontEnd[v]->yImage().pixelAddr(i+1,j+1));
 
-            int x_gradient = getValue(matrix, xmatrix);
-            int y_gradient = getValue(matrix, ymatrix);
+            // int* matrix = new int[9];
+            // matrix[0] = *(frontEnd[v]->yImage().pixelAddr(2*i-1,j-1));
+            // matrix[1] = *(frontEnd[v]->yImage().pixelAddr(2*i,j-1));
+            // matrix[2] = *(frontEnd[v]->yImage().pixelAddr(2*i+1,j-1));
+            // matrix[3] = *(frontEnd[v]->yImage().pixelAddr(2*i-1,j));
+            // matrix[4] = *(frontEnd[v]->yImage().pixelAddr(2*i,j));
+            // matrix[5] = *(frontEnd[v]->yImage().pixelAddr(2*i+1,j));
+            // matrix[6] = *(frontEnd[v]->yImage().pixelAddr(2*i-1,j+1));
+            // matrix[7] = *(frontEnd[v]->yImage().pixelAddr(2*i,j+1));
+            // matrix[8] = *(frontEnd[v]->yImage().pixelAddr(2*i+1,j+1));
 
-            int grad = sqrt(x_gradient*x_gradient + y_gradient*y_gradient);
-            int fuzzy = getFuzzyValue(grad);
-            if (fuzzy < *(frontEnd[v]->whiteImage().pixelAddr(i,j))) {
-                frontEnd[v]->greenImage().pixelAddr()[i+j*m_height] = (uint8_t)fuzzy;
+            // int x_gradient = getValue(matrix, xmatrix);
+            // int y_gradient = getValue(matrix, ymatrix);
+            uint8_t grad = ed->mag(i,j);
+            // int y_gradient = getValue(matrix, ymatrix);
+
+            // int grad = sqrt(x_gradient*x_gradient + y_gradient*y_gradient);
+            uint8_t fuzzy = getFuzzyValue(grad);
+            uint8_t whiteVal = *(frontEnd[v]->whiteImage().pixelAddr(i,j));
+            // uint8_t whiteVal = *(frontEnd[v]->whiteImage().pixelAddr(i,j));
+            // std::cout<<"FUZZY: "<<(int)fuzzy<<", White: "<<(int)whiteVal<<std::endl;
+            if (fuzzy < whiteVal) {
+                *frontEnd[v]->greenImage().pixelAddr(i,j) = fuzzy;
             } else {
-                frontEnd[v]->greenImage().pixelAddr()[i+j*m_height] = (uint8_t)*(frontEnd[v]->whiteImage().pixelAddr(i,j));
+                *frontEnd[v]->greenImage().pixelAddr(i,j) = whiteVal;
             }
+
+            // *frontEnd[v]->greenImage().pixelAddr(i,j) = fuzzy;
 
             // std::cout<<"GRADIENT: "<<i<<", "<<j<<" = "<<grad<<std::endl;
             // loop through image

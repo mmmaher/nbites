@@ -75,7 +75,7 @@ private:
 #endif
     void outportalVisionField();
     void updateObstacleBox();
-    void hackGradient(int v);
+    void hackGradient(int v, EdgeDetector* ed);
     int getValue(int* matrix, int* gradMatrix);
     int getFuzzyValue(int gradientValue);
 
