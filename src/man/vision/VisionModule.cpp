@@ -483,21 +483,11 @@ void VisionModule::outportalVisionField()
     visionOut.setMessage(visionOutMessage);
 }
 
-int VisionModule::getValue(int* matrix, int* gradMatrix) {
-    int sum = 0;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            int val = matrix[i + 3*j]*gradMatrix[i + 3*j];
-            sum+=val;
-            // System.out.println(matrix[i][j] + "*" + gradMatrix[i][j]+"="+val);
-        }
-    }
-    return sum;
-}
-
 int VisionModule::getFuzzyValue(int gradientValue) {
     int lowerFuzzy = 0;
-    int upperFuzzy = 100;
+    int upperFuzzy = 20;
+
+    // std::cout<<"GRAD: "<<gradientValue<<std::endl;
 
     if (gradientValue <= lowerFuzzy) { return 1; }
     if (gradientValue >= upperFuzzy) { return 255; }
@@ -506,10 +496,6 @@ int VisionModule::getFuzzyValue(int gradientValue) {
 
 void VisionModule::hackGradient(int v, EdgeDetector* ed)
 {
-    int xmatrix [9] = { -1,0,1,-2,0,2,-1,0,1 };
-    int ymatrix [9] = { 1,2,1,0,0,0,-1,-2,-1 };
-
-
     int m_width = frontEnd[v]->yImage().width();
     int m_height = frontEnd[v]->yImage().height();
     if (v == 0) {
@@ -523,32 +509,14 @@ void VisionModule::hackGradient(int v, EdgeDetector* ed)
 
     // std::cout<<"{ ";
 
+    int min = 5000;
+    int max = 0;
+
     for (int j = 1; j < m_height-1; ++j) {
-        // if (j == 0) { std::cout<<"{ "; }
-        // else { std::cout<<", { "; }
         for (int i = 1; i < m_width-1; ++i) {
-            // if (i != 0) { std::cout<", "; }
-
-            // int* matrix = new int[9];
-            // matrix[0] = *(frontEnd[v]->yImage().pixelAddr(2*i-1,j-1));
-            // matrix[1] = *(frontEnd[v]->yImage().pixelAddr(2*i,j-1));
-            // matrix[2] = *(frontEnd[v]->yImage().pixelAddr(2*i+1,j-1));
-            // matrix[3] = *(frontEnd[v]->yImage().pixelAddr(2*i-1,j));
-            // matrix[4] = *(frontEnd[v]->yImage().pixelAddr(2*i,j));
-            // matrix[5] = *(frontEnd[v]->yImage().pixelAddr(2*i+1,j));
-            // matrix[6] = *(frontEnd[v]->yImage().pixelAddr(2*i-1,j+1));
-            // matrix[7] = *(frontEnd[v]->yImage().pixelAddr(2*i,j+1));
-            // matrix[8] = *(frontEnd[v]->yImage().pixelAddr(2*i+1,j+1));
-
-            // int x_gradient = getValue(matrix, xmatrix);
-            // int y_gradient = getValue(matrix, ymatrix);
             uint8_t grad = ed->mag(i,j);
-            // int y_gradient = getValue(matrix, ymatrix);
-
-            // int grad = sqrt(x_gradient*x_gradient + y_gradient*y_gradient);
             uint8_t fuzzy = getFuzzyValue(grad);
             uint8_t whiteVal = *(frontEnd[v]->whiteImage().pixelAddr(i,j));
-            // uint8_t whiteVal = *(frontEnd[v]->whiteImage().pixelAddr(i,j));
             // std::cout<<"FUZZY: "<<(int)fuzzy<<", White: "<<(int)whiteVal<<std::endl;
             if (fuzzy < whiteVal) {
                 *frontEnd[v]->greenImage().pixelAddr(i,j) = fuzzy;
@@ -556,21 +524,12 @@ void VisionModule::hackGradient(int v, EdgeDetector* ed)
                 *frontEnd[v]->greenImage().pixelAddr(i,j) = whiteVal;
             }
 
-            // *frontEnd[v]->greenImage().pixelAddr(i,j) = fuzzy;
-
-            // std::cout<<"GRADIENT: "<<i<<", "<<j<<" = "<<grad<<std::endl;
-            // loop through image
-            // std::cout<<*(frontEnd[v]->yImage().pixelAddr(i,j));
+            if (grad < min) { min = grad; }
+            if (grad > max) { max = grad; }
         }
-        // std::cout<<" }";
     }
 
-    // std::cout<<" }"<<std::endl;
-    // edgeDetector[i]->gradPixel(i,j);
-    // ->y
-
-    // frontEnd[i]->greenImage();
-    // *(whiteImage.pixelAddr(i,j))
+    std::cout<<"Gradient: min = "<< min<<", max = "<< max<< std::endl;
 }
 
 
