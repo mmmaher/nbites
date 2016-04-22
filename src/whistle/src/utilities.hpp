@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <assert.h>
+#include <string.h>
 
 #include <iostream>
 #include <string>
@@ -141,7 +142,7 @@ namespace nblog {
     if( CONDITION ) { NBL_LOG(LEVEL, format, ## __VA_ARGS__) }
 
 //Print out state of VAR (always)
-#define NBL_WHATIS(VAR) NBL_LOG(ALWAYS, NBL_CSTR_DESCRIBE(VAR) )
+#define NBL_WHATIS(VAR) NBL_LOG(ALWAYS, "%s" NBL_CSTR_DESCRIBE(VAR) )
 
 //Warn if EXPRESSION evaluates to false
 #define NBL_CHECK(EXPRESSION) NBL_LOG_IF(WARN, !(EXPRESSION), "CHECK of '%s' FAILED (0)!", #EXPRESSION )
