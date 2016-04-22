@@ -12,7 +12,7 @@
 namespace nbsound {
 
     Transform::Transform(parameter_t sp)
-        : params(sp), timer("transform", ROBOT_CLOCKRATE)
+        : params(sp)
     {
         if (sp.format != NBS_S16_LE) {
             printf("Transform not yet implemented for non - NBS_S16_LE!\n");
@@ -50,8 +50,7 @@ namespace nbsound {
     }
     
     void Transform::transform(void * data, int channel) {
-        timer.begin();
-        
+
         for (int i = 0; i < params.frames; ++i) {
             inputd[i] = floatFrom(i, channel, params.channels, data);
         }
@@ -63,7 +62,6 @@ namespace nbsound {
             outputmag[i] = std::abs(*cptr);
         }
         
-        timer.end();
     }
     
 }

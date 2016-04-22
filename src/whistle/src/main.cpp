@@ -6,16 +6,18 @@
 #include "nblogio.h"
 #include "utilities.hpp"
 
-const char * WHISTLE_LOG_PAH = "/home/nao/nbites/log/whistle";
+const char * WHISTLE_LOG_PATH = "/home/nao/nbites/log/whistle";
 const int WHISTLE_PORT = 30000;
 
 using namespace nblog;
 
 nbsound::Capture * capture = NULL;
+nbsound::Transform * transform = NULL;
+
 nblog::io::server_socket_t server = 0;
 nblog::io::client_socket_t client = 0;
 
-uint8_t WHISTLE_HEARD = 0;
+uint8_t WHISTLE_HEARD = false;
 
 FILE * logFile;
 
@@ -55,7 +57,12 @@ long iteration = 0;
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
     printf("callback %ld\n", iteration);
 
-
+    if (buffer && transform) {
+        for (int i = 0; i < params->channels; ++i) {
+            printf("\ttransform %d\n", i);
+            transform->transform(buffer, i);
+        }
+    }
 
     ++iteration;
 }
@@ -66,7 +73,7 @@ int main(int argc, const char ** argv) {
     signal(SIGTERM, handler);
 
     printf("...whistle...\nfreopen()....\n");
-    freopen(WHISTLE_LOG_PAH, "w", stdout);
+    freopen(WHISTLE_LOG_PATH, "w", stdout);
 
     NBL_INFO("whistle::main() log file re-opened...");
 
@@ -77,6 +84,7 @@ int main(int argc, const char ** argv) {
     }
 
     nbsound::parameter_t params = {nbsound::NBS_S16_LE, 2, 32768, 48000};
+    transform = new nbsound::Transform(params);
     capture = new nbsound::Capture(callback, params);
 
     printf("main: period is %lf seconds\n", nbsound::PERIOD(params));
@@ -96,7 +104,10 @@ int main(int argc, const char ** argv) {
             whistleExit();
         }
 
+        io::config_socket(client, (io::sock_opt_mask) 0);
         io::send_exact(client, 1, &WHISTLE_HEARD, io::IO_MAX_DELAY());
+
+        close(client);
     }
 
     whistleExit();

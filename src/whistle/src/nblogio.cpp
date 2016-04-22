@@ -43,7 +43,7 @@ namespace nblog {
         const iotime_t IO_NOT_EXPECTING_ST = 500000;
 
         iotime_t IO_MAX_DELAY() {
-            return CONSTANTS.REMOTE_HOST_TIMEOUT();
+            return 5000000;
         }
 
 #define MICROSECONDS_MOD_SECONDS(us) (us % 1000000)
