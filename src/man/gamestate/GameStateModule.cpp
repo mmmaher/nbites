@@ -49,7 +49,6 @@ void GameStateModule::latchInputs()
     initialStateInput .latch();
     switchTeamInput   .latch();
     switchKickOffInput.latch();
-    whistleOverride   .latch();
 }
 
 void GameStateModule::update()
@@ -86,7 +85,7 @@ void GameStateModule::update()
     }
     if (commInput.message().have_remote_gc())
     {
-        whistleOverride();    
+        whistleHandler();
         latest_data = commInput.message();
         if (latest_data.state() != STATE_PLAYING)
         {
@@ -223,7 +222,13 @@ void GameStateModule::switchKickOff()
 {
     latest_data.set_kick_off_team(latest_data.kick_off_team() ? team_number : team_number+1);
 }
-void GameStateModule::whistleOverride()
+
+const int WHISTLE_PORT = 30005;
+bool processHeardWhistle();
+bool processShouldListen();
+bool processEndListening();
+
+void GameStateModule::whistleHandler()
 {
     if (latest_data.state == STATE_INITIAL 
             && commInput.message().state() == STATE_READY)

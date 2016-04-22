@@ -32,8 +32,6 @@ public:
     portals::InPortal<messages::Toggle>    initialStateInput;
     portals::InPortal<messages::Toggle>    switchTeamInput;
     portals::InPortal<messages::Toggle>    switchKickOffInput;
-    portals::InPortal<messages::Toggle>    whistleOverride;
-
 
 private:
     void latchInputs();
@@ -57,6 +55,7 @@ private:
     bool keep_time;
     long long start_time;
 
+    void whistleHandler();
     bool listening;
     bool heard_whistle 
 };

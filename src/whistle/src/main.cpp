@@ -7,7 +7,7 @@
 #include "utilities.hpp"
 
 const char * WHISTLE_LOG_PATH = "/home/nao/nbites/log/whistle";
-const int WHISTLE_PORT = 30000;
+const int WHISTLE_PORT = 30005;
 
 using namespace nblog;
 
