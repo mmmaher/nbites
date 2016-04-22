@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "RoboGrams.h"
 #include "Toggle.pb.h"
@@ -32,6 +32,8 @@ public:
     portals::InPortal<messages::Toggle>    initialStateInput;
     portals::InPortal<messages::Toggle>    switchTeamInput;
     portals::InPortal<messages::Toggle>    switchKickOffInput;
+    portals::InPortal<messages::Toggle>    whistleOverride;
+
 
 private:
     void latchInputs();
@@ -54,6 +56,9 @@ private:
 
     bool keep_time;
     long long start_time;
+
+    bool listening;
+    bool heard_whistle 
 };
 
 }
