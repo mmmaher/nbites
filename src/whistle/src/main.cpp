@@ -17,7 +17,8 @@ nbsound::Transform * transform = NULL;
 nblog::io::server_socket_t server = 0;
 nblog::io::client_socket_t client = 0;
 
-uint8_t WHISTLE_HEARD = false;
+uint8_t whistle_heard = false;
+uint8_t whistle_listening = false;
 
 FILE * logFile;
 
