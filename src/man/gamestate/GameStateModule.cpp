@@ -267,11 +267,11 @@ void GameStateModule::whistleHandler() {
         && commInput.message().state() == STATE_SET) {
 
         if ( processHeardWhistle() ) {
-            latest_data.state() = STATE_PLAYING;
+            latest_data.set_state(STATE_PLAYING);
             heard_whistle = true;
         } else if (heard_whistle) {
             std::cout << "GameStateModule::whistleHandler() latest_data.state == STATE_SET BUT heard_whistle !!!ERROR!!!" << std::cout;
-            latest_data.state() = STATE_PLAYING;
+            latest_data.set_state(STATE_PLAYING);
         }
 
         return; 
@@ -325,11 +325,11 @@ bool processHeardWhistle() {
     return (ret == 1);
 }
 
-void processStartListen {
+void processStartListen() {
     processConnect(PROCESS_START_LISTENING);
 }
 
-void processEndListening {
+void processEndListening() {
     processConnect(PROCESS_END_LISTENING);
 }
 
