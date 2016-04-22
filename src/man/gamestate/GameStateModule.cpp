@@ -49,6 +49,7 @@ void GameStateModule::latchInputs()
     initialStateInput .latch();
     switchTeamInput   .latch();
     switchKickOffInput.latch();
+    whistleOverride   .latch();
 }
 
 void GameStateModule::update()
@@ -85,6 +86,7 @@ void GameStateModule::update()
     }
     if (commInput.message().have_remote_gc())
     {
+        whistleOverride();    
         latest_data = commInput.message();
         if (latest_data.state() != STATE_PLAYING)
         {
@@ -131,7 +133,6 @@ void GameStateModule::update()
         //TODO keep track of penalty times
     }
 }
-
 void GameStateModule::advanceState()
 {
     switch (latest_data.state())
@@ -221,6 +222,46 @@ void GameStateModule::switchTeam()
 void GameStateModule::switchKickOff()
 {
     latest_data.set_kick_off_team(latest_data.kick_off_team() ? team_number : team_number+1);
+}
+void GameStateModule::whistleOverride()
+{
+    if (latest_data.state == STATE_INITIAL 
+            && commInput.message().state() == STATE_READY)
+        {
+            //< we need to start listening for whistle.  create whistle process.>
+            listening = true;
+            heard_whistle = false;
+        }
+    if (latest_data.state == STATE_READY 
+        && commInput.message().state() == STATE_READY)
+    {
+        if (heard_whistle)
+        {
+            latest_data.state() = STATE_PLAYING;
+            killall(whistle, SIG_INT);
+            listening = false;
+        }
+        else if (listening)
+        {
+            //<connect to whistle process, if response is heard>
+            latest_data.state() = STATE_PLAYING;
+            heard_whistle = true;
+            killall(whistle, SIG_INT);
+            listening = false;
+        }
+        else 
+        {
+        //<use comm input>  
+        }
+    if (commInput.message().state() == GAME_PLAYING) 
+    {
+        if (listening) 
+        {
+            killall(whistle, SIG_INT);
+            listening = false;
+            //<use comm input>
+        }      
+    }
 }
 
 }
