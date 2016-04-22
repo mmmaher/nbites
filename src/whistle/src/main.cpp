@@ -54,6 +54,16 @@ void handler(int signal) {
 
 long iteration = 0;
 
+double sum(int start, int end) {
+    NBL_ASSERT_GT(transform->get_freq_len(), end);
+    double total = 0;
+    for (int i = start; i < end; ++i) {
+        total += transform->outputmag[i] * transform->outputmag[i];
+    }
+
+    return total;
+}
+
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
     printf("callback %ld\n", iteration);
 
@@ -61,6 +71,9 @@ void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * para
         for (int i = 0; i < params->channels; ++i) {
             printf("\ttransform %d\n", i);
             transform->transform(buffer, i);
+
+            double summed = sum(1600, 1800);
+            NBL_PRINT("summed=\t%lf\n", summed);
         }
     }
 
