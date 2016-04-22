@@ -5,6 +5,8 @@
 #include "RoboCupGameControlData.h"
 #include "Common.h"
 
+#include "exactio.h"
+
 namespace man{
 namespace gamestate{
 
@@ -20,7 +22,8 @@ GameStateModule::GameStateModule(int team, int player) :
     last_kickoff(false),
     response_status(GAMECONTROLLER_RETURN_MSG_ALIVE),
     keep_time(false),
-    start_time(0)
+    start_time(0),
+    heard_whistle(false);
 {
     reset();
 }
@@ -35,7 +38,7 @@ void GameStateModule::run_()
     update();
 
     portals::Message<messages::GameState> output(&latest_data);
-    gameStateOutput.setMessage(output);
+    gameStateOutput.setMessage(output); 
 
     portals::Message<messages::GCResponse> response(0);
     response.get()->set_status(response_status);
@@ -93,7 +96,7 @@ void GameStateModule::update()
             start_time = 0;
         }
         else
-        {
+        { 
             keep_time = true;
             if (!start_time)
             {
@@ -168,7 +171,7 @@ void GameStateModule::manual_penalize()
                     player->set_penalty(PENALTY_NONE);
             }
             else
-            {
+            { 
                 response_status = GAMECONTROLLER_RETURN_MSG_MAN_PENALISE;
                 if (!commInput.message().have_remote_gc())
                     player->set_penalty(PENALTY_MANUAL);
@@ -180,8 +183,10 @@ void GameStateModule::manual_penalize()
 
 void GameStateModule::reset()
 {
+    
     keep_time = false;
     latest_data.Clear();
+    
 
     latest_data.set_state(STATE_INITIAL);
     latest_data.set_kick_off_team(team_number);
@@ -209,6 +214,8 @@ void GameStateModule::reset()
         messages::RobotInfo* player = them->add_player();
         player->set_penalty(PENALTY_NONE);
     }
+
+    heard_whistle = false;
 }
 void GameStateModule::switchTeam()
 {
@@ -224,56 +231,90 @@ void GameStateModule::switchKickOff()
 }
 
 const int WHISTLE_PORT = 30005;
+const char * WHISTLE_HOST = "127.0.0.1";
 bool processHeardWhistle();
-bool processStartListen();
-bool processEndListening();
+void processStartListen();
+void processEndListening();
 
-void GameStateModule::whistleHandler()
-{
+void GameStateModule::whistleHandler() {
     if (latest_data.state == STATE_READY 
-            && commInput.message().state() == STATE_SET)
-        {
-			processStartListen();            
-			listening = true;
-            heard_whistle = false;
-        }
+            && commInput.message().state() == STATE_SET) {
+        processStartListen();            
+        heard_whistle = false;
+
+        return;
+    }
+    
+
     if (latest_data.state == STATE_SET 
-        && commInput.message().state() == STATE_SET)
-    {
-    	processHeardWhistle();
-        if (heard_whistle)
-        {
-            latest_data.state() = STATE_PLAYING;
-            killall(whistle, SIG_INT);
-            listening = false;
-            processEndListening();
-        }
-        else if (listening)
-        {
-            //<connect to whistle process, if response is heard>
+        && commInput.message().state() == STATE_SET) {
+
+        if ( processHeardWhistle() ) {
             latest_data.state() = STATE_PLAYING;
             heard_whistle = true;
-            killall(whistle, SIG_INT);
-            listening = false;
+        } else if (heard_whistle) {
+            std::cout << "GameStateModule::whistleHandler() latest_data.state == STATE_SET BUT heard_whistle !!!ERROR!!!" << std::cout;
+            latest_data.state() = STATE_PLAYING;
         }
-        else 
-        {
-			return;        	
-        }
-    if (commInput.message().state() == STATE_PLAYING) 
-    {
-        if (listening) 
-        {
-            killall(whistle, SIG_INT);
-            listening = false;
-             processEndListening();
 
-            //<use comm input>
-        }      
+        return; 
+    }
+
+    if (latest_data.state == STATE_SET &&  commInput.message().state() == STATE_PLAYING) {
+        processEndListening();
+        heard_whistle = false;
+
+        return;
     }
 }
 
+enum {
+    PROCESS_HEARD_WHISTLE = 0,
+    PROCESS_START_LISTENING = 1,
+    PROCESS_END_LISTENING = 2
+};
 
+#define PERROR_AND_FAIL_IF( c , str )   \
+    if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
+
+int processConnect(uint8_t _request) {
+    struct sockaddr_in server;
+    bzero(&server, sizeof(server));
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    PERROR_AND_FAIL_IF(sock < 0, "could not create client socket!")
+
+    server.sin_family = AF_INET ;
+    server.sin_port = htons(WHISTLE_PORT);
+
+    struct hostent * hent = gethostbyname(WHISTLE_HOST);
+    PERROR_AND_FAIL_IF(!hent, "could not get host ip")
+
+    bcopy(hent->h_addr, &server.sin_addr.s_addr, hent->h_length);
+
+    int ret = connect(sock, (struct sockaddr *) &server, (socklen_t) sizeof(struct sockaddr_in) );
+
+    PERROR_AND_FAIL_IF(ret, "could not connect client socket!")
+
+    uint8_t request = _request, response;
+    PERROR_AND_FAIL_IF( send(sock, &request, 1, MSG_NOSIGNAL) < 0 );
+    PERROR_AND_FAIL_IF( recv(sock, &response, 1, MSG_NOSIGNAL) < 0 );
+
+    return response;
+}
+
+bool processHeardWhistle() {
+    int ret = processConnect(PROCESS_HEARD_WHISTLE);
+    return (ret == 1);
+}
+
+void processStartListen {
+    processConnect(PROCESS_START_LISTENING);
+}
+
+void processEndListening {
+    processConnect(PROCESS_END_LISTENING);
+}
 
 }
 }

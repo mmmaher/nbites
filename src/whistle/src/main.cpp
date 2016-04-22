@@ -20,7 +20,30 @@ nblog::io::client_socket_t client = 0;
 uint8_t whistle_heard = false;
 uint8_t whistle_listening = false;
 
+enum {
+    PROCESS_HEARD_WHISTLE = 0,
+    PROCESS_START_LISTENING = 1,
+    PROCESS_END_LISTENING = 2
+};
+
 FILE * logFile;
+
+bool processHeardWhistle() {
+    if (whistle_heard) {
+        whistle_listening = false;
+        return true;
+    } return false;
+}
+
+void processStartListening() {
+    whistle_heard = false;
+    whistle_listening = true;
+}
+
+void processEndListening() {
+    whistle_heard = false;
+    whistle_listening = false;
+}
 
 void whistleExitEnd() {
     fflush(stdout);
@@ -70,7 +93,7 @@ const double WHISTLE_THRESHOLD = 5000000;
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
 //    printf("callback %ld\n", iteration);
 
-    if (buffer && transform) {
+    if (whistle_listening && buffer && transform) {
         for (int i = 0; i < params->channels; ++i) {
 //            printf("\ttransform %d\n", i);
             transform->transform(buffer, i);
@@ -79,6 +102,7 @@ void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * para
 //            NBL_PRINT("summed=\t%lf\n", summed);
             if (summed > WHISTLE_THRESHOLD) {
                 NBL_WARN("WHISTLE: %lf\n", summed);
+                whistle_heard = true;
             }
         }
     }
@@ -125,8 +149,22 @@ int main(int argc, const char ** argv) {
             whistleExit();
         }
 
+        uint8_t request, response = 0;
         io::config_socket(client, (io::sock_opt_mask) 0);
-        io::send_exact(client, 1, &WHISTLE_HEARD, io::IO_MAX_DELAY());
+        io::recv_exact(client, 1, &request, io::IO_MAX_DELAY() );
+
+        switch(request) {
+            case PROCESS_HEARD_WHISTLE:
+                response = processHeardWhistle(); break;
+            case PROCESS_START_LISTENING:
+                processStartListening(); break;
+            case PROCESS_END_LISTENING:
+                processEndListening(); break;
+            default:
+                NBL_ERROR("whistle.main() UNKNOWN REQUEST ENUMERATION %d", request);
+        }
+
+        io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
 
         close(client);
     }
