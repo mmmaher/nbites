@@ -237,7 +237,7 @@ void processStartListen();
 void processEndListening();
 
 void GameStateModule::whistleHandler() {
-    if (latest_data.state == STATE_READY 
+    if (latest_data.state() == STATE_READY
             && commInput.message().state() == STATE_SET) {
         processStartListen();            
         heard_whistle = false;
@@ -246,7 +246,7 @@ void GameStateModule::whistleHandler() {
     }
     
 
-    if (latest_data.state == STATE_SET 
+    if (latest_data.state() == STATE_SET
         && commInput.message().state() == STATE_SET) {
 
         if ( processHeardWhistle() ) {
@@ -260,7 +260,7 @@ void GameStateModule::whistleHandler() {
         return; 
     }
 
-    if (latest_data.state == STATE_SET &&  commInput.message().state() == STATE_PLAYING) {
+    if (latest_data.state() == STATE_SET &&  commInput.message().state() == STATE_PLAYING) {
         processEndListening();
         heard_whistle = false;
 
