@@ -168,7 +168,7 @@ int main(int argc, const char ** argv) {
             default:
                 NBL_ERROR("whistle.main() UNKNOWN REQUEST ENUMERATION %d", request);
         }
-
+        if (response) printf("response > 0 \n");
         io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
 
         close(client);
