@@ -23,7 +23,7 @@ GameStateModule::GameStateModule(int team, int player) :
     response_status(GAMECONTROLLER_RETURN_MSG_ALIVE),
     keep_time(false),
     start_time(0),
-    heard_whistle(false);
+    heard_whistle(false)
 {
     reset();
 }
@@ -277,7 +277,7 @@ enum {
 #define PERROR_AND_FAIL_IF( c , str )   \
     if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
 
-int processConnect(uint8_t _request) {
+int processConnect(int _request) {
     struct sockaddr_in server;
     bzero(&server, sizeof(server));
 
@@ -297,8 +297,8 @@ int processConnect(uint8_t _request) {
     PERROR_AND_FAIL_IF(ret, "could not connect client socket!")
 
     uint8_t request = _request, response;
-    PERROR_AND_FAIL_IF( send(sock, &request, 1, MSG_NOSIGNAL) < 0 );
-    PERROR_AND_FAIL_IF( recv(sock, &response, 1, MSG_NOSIGNAL) < 0 );
+    PERROR_AND_FAIL_IF( send(sock, &request, 1, MSG_NOSIGNAL) < 0, "send() error" );
+    PERROR_AND_FAIL_IF( recv(sock, &response, 1, MSG_NOSIGNAL) < 0, "recv() error" );
 
     return response;
 }

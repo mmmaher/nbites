@@ -56,7 +56,7 @@ private:
     long long start_time;
 
     void whistleHandler();
-    bool heard_whistle 
+    bool heard_whistle;
 };
 
 }
