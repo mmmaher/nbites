@@ -149,16 +149,21 @@ int main(int argc, const char ** argv) {
             whistleExit();
         }
 
+        printf("connection\n");
+
         uint8_t request, response = 0;
         io::config_socket(client, (io::sock_opt_mask) 0);
         io::recv_exact(client, 1, &request, io::IO_MAX_DELAY() );
 
         switch(request) {
             case PROCESS_HEARD_WHISTLE:
+                printf("PROCESS_HEARD_WHISTLE?\n");
                 response = processHeardWhistle(); break;
             case PROCESS_START_LISTENING:
+                printf("\tPROCESS_START_LISTENING\n");
                 processStartListening(); break;
             case PROCESS_END_LISTENING:
+                printf("\tPROCESS_END_LISTENING\n");
                 processEndListening(); break;
             default:
                 NBL_ERROR("whistle.main() UNKNOWN REQUEST ENUMERATION %d", request);

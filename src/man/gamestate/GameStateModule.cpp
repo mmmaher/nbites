@@ -313,9 +313,13 @@ int processConnect(int _request) {
 
     PERROR_AND_FAIL_IF(ret, "could not connect client socket!")
 
+    printf(".");
+
     uint8_t request = _request, response;
     PERROR_AND_FAIL_IF( send(sock, &request, 1, MSG_NOSIGNAL) < 0, "send() error" );
     PERROR_AND_FAIL_IF( recv(sock, &response, 1, MSG_NOSIGNAL) < 0, "recv() error" );
+
+    printf(":");
 
     return response;
 }
