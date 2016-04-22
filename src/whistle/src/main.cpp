@@ -23,10 +23,7 @@ void whistleExitEnd() {
     exit(0);
 }
 
-void handler(int signal) {
-
-    printf("... handling signal ...\n");
-
+void whistleExit() {
     if (capture) {
         NBL_WARN("stopping capture...")
         if (!capture->stop()) {
@@ -46,6 +43,11 @@ void handler(int signal) {
     whistleExitEnd();
 }
 
+void handler(int signal) {
+    printf("... handling signal ...\n");
+    whistleExit();
+}
+
 long iteration = 0;
 
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
@@ -57,6 +59,10 @@ void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * para
 }
 
 int main(int argc, const char ** argv) {
+
+    signal(SIGINT, handler);
+    signal(SIGTERM, handler);
+
     printf("...whistle...\nfreopen()....\n");
     freopen(WHISTLE_LOG_PAH, "w", stdout);
 
@@ -71,105 +77,20 @@ int main(int argc, const char ** argv) {
     nbsound::parameter_t params = {nbsound::NBS_S16_LE, 2, 32768, 48000};
     capture = new nbsound::Capture(callback, params);
 
-    capture->init();
-    std::cout << capture->print() << std::endl;
-
     printf("main: period is %lf seconds\n", nbsound::PERIOD(params));
     printf("main: sample freq is %lf seconds\n", nbsound::FREQUENCY(params));
 
-    signal(SIGINT, handler);
-    signal(SIGTERM, handler);
+    capture->init();
+    std::cout << capture->print() << std::endl;
+    pthread_t capture_thread;
 
-    std::string unused;
-    std::getline(std::cin, unused);
-
-    pthread_t thread;
-    capture->start_new_thread(thread, NULL);
     printf("main: capture created...\n");
+    capture->start_new_thread(capture_thread, NULL);
 
-    while (capture->is_active()) {
-        usleep(100);
-    }
-    printf("main: capture waited...\n");
-
-    delete capture;
-    nblog::log_main_destroy();
-
-    printf("main: done.\n");
-
-    std::string mode(argv[1]);
-
-    if (mode == captureMode) {
-        control::control_init();
-        nblog::log_main_init();
-
-        nbsound::parameter_t params = {nbsound::NBS_S16_LE, 2, 32768, 48000};
-        capture = new nbsound::Capture(callback, params);
-
-        capture->init();
-        std::cout << capture->print() << std::endl;
-
-        printf("main: period is %lf seconds\n", nbsound::PERIOD(params));
-        printf("main: sample freq is %lf seconds\n", nbsound::FREQUENCY(params));
-
-        signal(SIGINT, handler);
-        signal(SIGTERM, handler);
-
-        std::string unused;
-        std::getline(std::cin, unused);
-
-        pthread_t thread;
-        capture->start_new_thread(thread, NULL);
-        printf("main: capture created...\n");
-
-        while (capture->is_active()) {
-            usleep(100);
-        }
-        printf("main: capture waited...\n");
+    while(capture->is_active()) {
         
-        delete capture;
-        nblog::log_main_destroy();
-        
-        printf("main: done.\n");
-    } else if (mode == transmitMode) {
-
-        control::control_init();
-        nblog::log_main_init();
-
-        nbsound::parameter_t params = {nbsound::NBS_S16_LE, 2, 32768, 48000};
-        capture = new nbsound::Capture(callback, params);
-
-        capture->init();
-        std::cout << capture->print() << std::endl;
-
-        printf("main: period is %lf seconds\n", nbsound::PERIOD(params));
-        printf("main: sample freq is %lf seconds\n", nbsound::FREQUENCY(params));
-
-        signal(SIGINT, handler);
-        signal(SIGTERM, handler);
-
-        std::string unused;
-        std::getline(std::cin, unused);
-
-        pthread_t thread;
-        capture->start_new_thread(thread, NULL);
-        printf("main: capture created...\n");
-
-        while (capture->is_active()) {
-            usleep(100);
-        }
-        printf("main: capture waited...\n");
-
-        delete capture;
-        nblog::log_main_destroy();
-        
-        printf("main: done.\n");
-
-    } else {
-        printf("unknown mode: %s\n",
-               argv[1]);
-        return 1;
     }
 
+    whistleExit();
     return 0;
 }
