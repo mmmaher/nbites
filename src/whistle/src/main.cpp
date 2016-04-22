@@ -171,7 +171,9 @@ int main(int argc, const char ** argv) {
         if (response) printf("response > 0 \n");
         io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
 
-        close(client);
+        if (client)
+            close(client);
+        client = 0;
     }
 
     whistleExit();

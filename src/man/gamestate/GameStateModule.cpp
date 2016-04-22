@@ -73,6 +73,8 @@ void GameStateModule::latchInputs()
 
 void GameStateModule::update()
 {
+    int last, next;
+    last = latest_data.state();
     // Check comm input last so we can reset button toggles.
     if (buttonPressInput.message().toggle() != last_button)
     {
@@ -151,7 +153,12 @@ void GameStateModule::update()
             static_cast<unsigned int>(diff_time/MICROS_PER_SECOND));
         //TODO keep track of penalty times
     }
+
+    next = latest_data.state();
+    whistleHandler(last, next);
+    latest_data.set_state(next);
 }
+
 void GameStateModule::advanceState()
 {
     switch (latest_data.state())
@@ -200,10 +207,8 @@ void GameStateModule::manual_penalize()
 
 void GameStateModule::reset()
 {
-    
     keep_time = false;
     latest_data.Clear();
-    
 
     latest_data.set_state(STATE_INITIAL);
     latest_data.set_kick_off_team(team_number);
@@ -253,9 +258,9 @@ bool processHeardWhistle();
 void processStartListen();
 void processEndListening();
 
-void GameStateModule::whistleHandler() {
-    if (latest_data.state() == STATE_READY
-            && commInput.message().state() == STATE_SET) {
+void GameStateModule::whistleHandler(int last, int& next) {
+    if (last == STATE_READY
+            && next == STATE_SET) {
         processStartListen();            
         heard_whistle = false;
 
@@ -263,21 +268,23 @@ void GameStateModule::whistleHandler() {
     }
     
 
-    if (latest_data.state() == STATE_SET
-        && commInput.message().state() == STATE_SET) {
+    if (last == STATE_SET
+        && next == STATE_SET) {
 
         if ( processHeardWhistle() ) {
-            latest_data.set_state(STATE_PLAYING);
+            printf(":::: WHISTLE OVERRIDE ::::\n");
+            next = STATE_PLAYING;
             heard_whistle = true;
         } else if (heard_whistle) {
+            printf(":::: WHISTLE OVERRIDE ::::\n");
             std::cout << "GameStateModule::whistleHandler() latest_data.state == STATE_SET BUT heard_whistle !!!ERROR!!!" << std::cout;
-            latest_data.set_state(STATE_PLAYING);
+            next = STATE_PLAYING;
         }
 
         return; 
     }
 
-    if (latest_data.state() == STATE_SET &&  commInput.message().state() == STATE_PLAYING) {
+    if (last == STATE_SET && next == STATE_PLAYING) {
         processEndListening();
         heard_whistle = false;
 
@@ -299,7 +306,7 @@ int processConnect(int _request) {
     bzero(&server, sizeof(server));
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
-    PERROR_AND_FAIL_IF(sock < 0, "could not create client socket!")
+    PERROR_AND_FAIL_IF(sock <= 0, "could not create client socket!")
 
     server.sin_family = AF_INET ;
     server.sin_port = htons(WHISTLE_PORT);

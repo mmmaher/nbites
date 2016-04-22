@@ -55,7 +55,7 @@ private:
     bool keep_time;
     long long start_time;
 
-    void whistleHandler();
+    void whistleHandler(int last, int&next);
     bool heard_whistle;
 };
 
