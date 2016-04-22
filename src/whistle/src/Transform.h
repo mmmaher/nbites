@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include "Sound.h"
-#include "timing/Timing.h"
 
 #include "Transform.h"
 #ifndef __APPLE__
@@ -28,9 +27,7 @@ namespace nbsound {
         ~Transform();
         
         float * outputmag;
-        
-        Timer timer;
-        
+                
     private:
         parameter_t params;
         int frequency_length;
