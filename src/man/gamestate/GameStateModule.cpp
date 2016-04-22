@@ -6,6 +6,23 @@
 #include "Common.h"
 
 #include "exactio.h"
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <err.h>
+#include <errno.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <netdb.h>
+#include <sys/time.h>
 
 namespace man{
 namespace gamestate{
