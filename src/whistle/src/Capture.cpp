@@ -7,6 +7,9 @@ namespace nbsound {
     {
         snd_buffer_size = APP_BUFFER_SIZE(params);
         snd_buffer = malloc(snd_buffer_size);
+
+        handle = NULL;
+        
     }
     
     Capture::~Capture() {

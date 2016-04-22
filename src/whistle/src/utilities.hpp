@@ -69,44 +69,12 @@ namespace nblog {
 
         extern void nbl_print( LogLevel curLev, LogLevel msgLevel, const char * file, int line, const char * format, ...);
 
-        /* ************************************************************* */
-        /* variable template and function overload alternative to vaargs */
-
-        struct arg_passer {
-            template<typename ...T> arg_passer(T...) {}
-        };
-
         template<typename T>
-        struct wrap {
-            static void add_to(std::ostringstream& buffer, T t) {
-                buffer << t;
-            }
-        };
-
-        template <typename T>
-        struct wrap<T*> {
-            static void add_to (std::ostringstream& buffer, T* t) {
-                if (!t) buffer << "(NULL *)";
-                else buffer << t;
-            }
-        };
-
-        template <typename T>
-        static void fwrap(std::ostringstream& buffer, T t) {
-            wrap<T>::add_to(buffer, t);
-        }
-
-        /* combines args into a std::string and returns it */
-        template<typename... ArgPack>
-        static inline const std::string combine(ArgPack ... args) {
+        static inline const std::string describe(const char * name, T var) {
             std::ostringstream buffer;
-            
-            arg_passer( (fwrap(buffer,args),1)...);
-
+            buffer << "var '" << name << "' == " << var;
             return buffer.str();
         }
-
-        /* ************************************************************* */
 
         /* formats args according to format, returns result as std::string */
         extern std::string format(const char * format, ...);
@@ -127,7 +95,8 @@ namespace nblog {
     } while(0);
 
 //Return (const char *) s.t. NBL_CSTR_DESCRIBE(false) => "var 'false' == 0"
-#define NBL_CSTR_DESCRIBE(VAR) (nblog::utilities::combine("var '", #VAR, "' == ", VAR).c_str())
+//#define NBL_CSTR_DESCRIBE(VAR) (nblog::utilities::combine("var '", #VAR, "' == ", VAR).c_str())
+#define NBL_CSTR_DESCRIBE(VAR) ( nblog::utilities::describe(#VAR, VAR).c_str() )
 
 #define NBL_STRINGIFY(SYM) ( #SYM )
 #define NBL_STRINGIFY_2(SYM) NBL_STRINGIFY(SYM)
@@ -142,7 +111,7 @@ namespace nblog {
     if( CONDITION ) { NBL_LOG(LEVEL, format, ## __VA_ARGS__) }
 
 //Print out state of VAR (always)
-#define NBL_WHATIS(VAR) NBL_LOG(ALWAYS, "%s" NBL_CSTR_DESCRIBE(VAR) )
+#define NBL_WHATIS(VAR) NBL_LOG(ALWAYS, "%s", NBL_CSTR_DESCRIBE(VAR) )
 
 //Warn if EXPRESSION evaluates to false
 #define NBL_CHECK(EXPRESSION) NBL_LOG_IF(WARN, !(EXPRESSION), "CHECK of '%s' FAILED (0)!", #EXPRESSION )
