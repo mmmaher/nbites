@@ -64,16 +64,21 @@ double sum(int start, int end) {
     return total;
 }
 
+const double WHISTLE_THRESHOLD = 5000000;
+
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
-    printf("callback %ld\n", iteration);
+//    printf("callback %ld\n", iteration);
 
     if (buffer && transform) {
         for (int i = 0; i < params->channels; ++i) {
-            printf("\ttransform %d\n", i);
+//            printf("\ttransform %d\n", i);
             transform->transform(buffer, i);
 
             double summed = sum(1600, 1800);
-            NBL_PRINT("summed=\t%lf\n", summed);
+//            NBL_PRINT("summed=\t%lf\n", summed);
+            if (summed > WHISTLE_THRESHOLD) {
+                NBL_WARN("WHISTLE: %lf\n", summed);
+            }
         }
     }
 
