@@ -225,26 +225,28 @@ void GameStateModule::switchKickOff()
 
 const int WHISTLE_PORT = 30005;
 bool processHeardWhistle();
-bool processShouldListen();
+bool processStartListen();
 bool processEndListening();
 
 void GameStateModule::whistleHandler()
 {
-    if (latest_data.state == STATE_INITIAL 
-            && commInput.message().state() == STATE_READY)
+    if (latest_data.state == STATE_READY 
+            && commInput.message().state() == STATE_SET)
         {
-            //< we need to start listening for whistle.  create whistle process.>
-            listening = true;
+			processStartListen();            
+			listening = true;
             heard_whistle = false;
         }
-    if (latest_data.state == STATE_READY 
-        && commInput.message().state() == STATE_READY)
+    if (latest_data.state == STATE_SET 
+        && commInput.message().state() == STATE_SET)
     {
+    	processHeardWhistle();
         if (heard_whistle)
         {
             latest_data.state() = STATE_PLAYING;
             killall(whistle, SIG_INT);
             listening = false;
+            processEndListening();
         }
         else if (listening)
         {
@@ -256,14 +258,16 @@ void GameStateModule::whistleHandler()
         }
         else 
         {
-        //<use comm input>  
+			return;        	
         }
-    if (commInput.message().state() == GAME_PLAYING) 
+    if (commInput.message().state() == STATE_PLAYING) 
     {
         if (listening) 
         {
             killall(whistle, SIG_INT);
             listening = false;
+             processEndListening();
+
             //<use comm input>
         }      
     }
