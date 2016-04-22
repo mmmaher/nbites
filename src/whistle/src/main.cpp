@@ -86,7 +86,7 @@ int main(int argc, const char ** argv) {
     signal(SIGTERM, handler);
 
     printf("...whistle...\nfreopen()....\n");
-    freopen(WHISTLE_LOG_PATH, "w", stdout);
+//    freopen(WHISTLE_LOG_PATH, "w", stdout);
 
     NBL_INFO("whistle::main() log file re-opened...");
 
@@ -95,6 +95,8 @@ int main(int argc, const char ** argv) {
         NBL_ERROR("could not create server socket!\n");
         whistleExitEnd();
     }
+
+    NBL_WHATIS(server);	
 
     nbsound::parameter_t params = {nbsound::NBS_S16_LE, 2, 32768, 48000};
     transform = new nbsound::Transform(params);
