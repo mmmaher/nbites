@@ -15,6 +15,8 @@ nbsound::Capture * capture = NULL;
 nblog::io::server_socket_t server = 0;
 nblog::io::client_socket_t client = 0;
 
+uint8_t WHISTLE_HEARD = 0;
+
 FILE * logFile;
 
 void whistleExitEnd() {
@@ -88,7 +90,13 @@ int main(int argc, const char ** argv) {
     capture->start_new_thread(capture_thread, NULL);
 
     while(capture->is_active()) {
-        
+        io::ioret ret = io::poll_accept(server, client);
+        if (ret) {
+            NBL_ERROR("io::poll_accept() got error!");
+            whistleExit();
+        }
+
+        io::send_exact(client, 1, &WHISTLE_HEARD, io::IO_MAX_DELAY());
     }
 
     whistleExit();
