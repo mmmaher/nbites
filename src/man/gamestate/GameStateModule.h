@@ -59,9 +59,9 @@ private:
     bool heard_whistle;
     int processSocket;
 
-    int connectSocket(int);
+    int connectSocket();
     void closeSocket();
-    int processConnect();
+    int processConnect(int);
     bool processHeardWhistle();
     void processStartListen();
     void processEndListening();
