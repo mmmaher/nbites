@@ -42,7 +42,7 @@ void error_signal_handler(int signal) {
     char buffer[1000];
 
     char * sigstr = strsignal(signal);
-    snprintf(buffer, 1000, "error_signal_handler() SIGNALLED: %s\n", sigstr);
+    snprintf(buffer, 1000, "error_signal_handler()       SIGNALLED: %s\n", sigstr);
     fprintf(stdout, "%s", buffer);
     fprintf(stderr, "%s", buffer);
     fflush(stdout);

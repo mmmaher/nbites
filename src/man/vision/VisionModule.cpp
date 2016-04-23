@@ -312,9 +312,7 @@ void VisionModule::run_()
 
         PROF_EXIT2(P_VISION_TOP, P_VISION_BOT, i==0)
 #ifdef USE_LOGGING
-        if (ballDetected) {
-            logImage(i);
-        }
+        logImage(i);
 #endif
     }
     double topTotal;
@@ -483,7 +481,7 @@ void VisionModule::outportalVisionField()
     vb->set_on(ballOn);
     vb->set_frames_on(ballOnCount);
     vb->set_frames_off(ballOffCount);
-    vb->set_intopcam(top);
+    vb->set_in_top_cam(top);
     vb->set_wz0(homography[!top]->wz0());
 
     if (ballOn)
