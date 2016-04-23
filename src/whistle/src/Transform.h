@@ -13,7 +13,7 @@
 
 #include "Transform.h"
 #ifndef __APPLE__
-#include <fftw3.h>
+#include "../include/fftw3.h"
 #else
 #include "fftw3.h"
 #endif
