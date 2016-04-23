@@ -296,7 +296,7 @@ void GameStateModule::whistleHandler(int last, int& next) {
 #define PERROR_AND_FAIL_IF( c , str )   \
 if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
 
-    int connectSocket() {
+    int GameStateModule::connectSocket() {
         if (processSocket > 0)
             return 0;
         else {
@@ -322,7 +322,7 @@ if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
         }
     }
 
-    void closeSocket() {
+    void GameStateModule::closeSocket() {
         if (socket > 0) {
             close (socket);
             socket = 0;
