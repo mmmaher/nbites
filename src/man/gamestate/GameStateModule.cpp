@@ -303,7 +303,7 @@ if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
             struct sockaddr_in server;
             bzero(&server, sizeof(server));
 
-            int sock = socket(AF_INET, SOCK_STREAM, 0);
+            int sock = processSocket(AF_INET, SOCK_STREAM, 0);
             PERROR_AND_FAIL_IF(sock <= 0, "could not create client socket!")
 
             server.sin_family = AF_INET ;
@@ -323,11 +323,11 @@ if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
     }
 
     void GameStateModule::closeSocket() {
-        if (socket > 0) {
-            close (socket);
-            socket = 0;
+        if (processSocket > 0) {
+            close(processSocket);
+            processSocket = 0;
         } else {
-            socket = 0;
+            processSocket = 0;
         }
     }
 
