@@ -290,6 +290,8 @@ namespace man{
                             shared_memory->whistle_listen = false;
                             shared_memory->whistle_heard = false;
                         } break;
+
+                        default: return;
                     }
                 } break;
 
@@ -313,6 +315,8 @@ namespace man{
                             shared_memory->whistle_listen = false;
                             shared_memory->whistle_heard = false;
                         } break;
+
+                        default: return;
                     }
                 } break;
 
@@ -335,8 +339,12 @@ namespace man{
                         case STATE_PLAYING: {
                             shared_memory->whistle_listen = false;
                         } break;
+
+                        default: return;
                     }
                 } break;
+
+                default: return;
             }
         }
 }
