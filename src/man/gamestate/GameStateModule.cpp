@@ -24,6 +24,10 @@
 #include <netdb.h>
 #include <sys/time.h>
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 namespace man{
     namespace gamestate{
 
@@ -40,13 +44,32 @@ namespace man{
         response_status(GAMECONTROLLER_RETURN_MSG_ALIVE),
         keep_time(false),
         start_time(0),
-        heard_whistle(false)
         {
             reset();
+
+            shared_memory_fd = shm_open(NBITES_MEM, O_RDWR, 0600);
+            if (shared_memory_fd < 0) {
+                std::cout << "GameStateModule couldn't open shared fd!" << std::endl;
+                exit(0);
+            }
+
+            shared_memory = (volatile SharedData*) mmap(NULL, sizeof(SharedData),
+                                                 PROT_READ | PROT_WRITE,
+                                                 MAP_SHARED, shared_memory_fd, 0);
+
+            if (shared_memory == MAP_FAILED) {
+                std::cout << "GameStateModule couldn't map to pointer!" << std::endl;
+                exit(0);
+            }
+
+            shared_memory->whistle_heard = false;
+            shared_memory->whistle_listen = false;
         }
 
         GameStateModule::~GameStateModule()
         {
+            munmap((void *)shared_memory, sizeof(SharedData));
+            close(shared_memory_fd);
         }
 
         void GameStateModule::run_()
@@ -73,8 +96,8 @@ namespace man{
 
         void GameStateModule::update()
         {
-            int last, next;
-            last = latest_data.state();
+            game_state_t last, next;
+            last = (game_state_t) latest_data.state();
             // Check comm input last so we can reset button toggles.
             if (buttonPressInput.message().toggle() != last_button)
             {
@@ -153,9 +176,9 @@ namespace man{
                 //TODO keep track of penalty times
             }
 
-            next = latest_data.state();
+            next = (game_state_t) latest_data.state();
             whistleHandler(last, next);
-            latest_data.set_state(next);
+            latest_data.set_state( (int) next);
         }
 
         void GameStateModule::advanceState()
@@ -251,126 +274,70 @@ namespace man{
             latest_data.set_kick_off_team(latest_data.kick_off_team() ? team_number : team_number+1);
         }
 
-        const int WHISTLE_PORT = 30005;
-        const char * WHISTLE_HOST = "127.0.0.1";
+        void GameStateModule::whistleHandler(game_state_t last, game_state_t& next) {
 
-        void GameStateModule::whistleHandler(int last, int& next) {
-            if (last == STATE_READY
-                && next == STATE_SET) {
-                closeSocket();
-                processStartListen();
-                heard_whistle = false;
+            switch(last) {
+                case STATE_READY: {
+                    switch(next) {
+                        case STATE_READY: {
+                            //NOP
+                        } break;
 
-                return;
-            }
+                        case STATE_SET: {
+                            shared_memory->whistle_listen = true;
+                        } break;
+                            
+                        case STATE_PLAYING: {
+                            shared_memory->whistle_listen = false;
+                            shared_memory->whistle_heard = false;
+                        } break;
+                    }
+                } break;
 
-            if (last == STATE_SET
-                && next == STATE_SET) {
+                case STATE_SET: {
+                    switch(next) {
+                        case STATE_READY: {
+                            shared_memory->whistle_listen = false;
+                            shared_memory->whistle_heard = false;
+                        } break;
 
-                if ( processHeardWhistle() ) {
-                    printf(":::: WHISTLE OVERRIDE ::::\n");
-                    next = STATE_PLAYING;
-                    heard_whistle = true;
-                    closeSocket();
+                        case STATE_SET: {
+                            shared_memory->whistle_listen = true;
+                            if (shared_memory->whistle_heard) {
+                                printf(":::: WHISTLE OVERRIDE ::::\n");
+                                next = STATE_PLAYING;
+                            }
+                        } break;
+                            
+                        case STATE_PLAYING: {
+                            printf(":::: WHISTLE MISSED ::::\n");
+                            shared_memory->whistle_listen = false;
+                            shared_memory->whistle_heard = false;
+                        } break;
+                    }
+                } break;
 
-                } else if (heard_whistle) {
-                    printf(":::: WHISTLE OVERRIDE ::::\n");
-                    std::cout << "GameStateModule::whistleHandler() latest_data.state == STATE_SET BUT heard_whistle !!!ERROR!!!" << std::cout;
-                    next = STATE_PLAYING;
-                }
+                case STATE_PLAYING: {
+                    switch(next) {
+                        case STATE_READY: {
+                            shared_memory->whistle_listen = false;
+                            shared_memory->whistle_heard = false;
+                        } break;
 
-                return;
-            }
+                        case STATE_SET: {
+                            shared_memory->whistle_listen = true;
+                            if (shared_memory->whistle_heard) {
+                                printf(":::: WHISTLE OVERRIDE ::::\n");
+                                next = STATE_PLAYING;
+                            }
 
-	    if (last == STATE_PLAYING && next == STATE_SET && heard_whistle) {
-		next = STATE_PLAYING;
-		closeSocket();
-	    }	
-
-            if ( last == STATE_SET && next == STATE_PLAYING ) {
-                processEndListening();
-                heard_whistle = false;
-
-                return;
-            }
-        }
-        
-#define PERROR_AND_FAIL_IF( c , str )   \
-if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
-        
-        int GameStateModule::connectSocket() {
-            if (processSocket > 0)
-                return 0;
-            else {
-                struct sockaddr_in server;
-                bzero(&server, sizeof(server));
-                
-                int sock = socket(AF_INET, SOCK_STREAM, 0);
-                PERROR_AND_FAIL_IF(sock <= 0, "could not create client socket!")
-                
-                server.sin_family = AF_INET ;
-                server.sin_port = htons(WHISTLE_PORT);
-                
-                struct hostent * hent = gethostbyname(WHISTLE_HOST);
-                PERROR_AND_FAIL_IF(!hent, "could not get host ip")
-                
-                bcopy(hent->h_addr, &server.sin_addr.s_addr, hent->h_length);
-                
-                int ret = connect(sock, (struct sockaddr *) &server, (socklen_t) sizeof(struct sockaddr_in) );
-                
-                PERROR_AND_FAIL_IF(ret, "could not connect client socket!")
-                processSocket = sock;
-                return 0;
+                        } break;
+                            
+                        case STATE_PLAYING: {
+                            shared_memory->whistle_listen = false;
+                        } break;
+                    }
+                } break;
             }
         }
-        
-        void GameStateModule::closeSocket() {
-            if (processSocket > 0) {
-                close(processSocket);
-                processSocket = 0;
-            } else {
-                processSocket = 0;
-            }
-        }
-        
-        enum {
-            PROCESS_HEARD_WHISTLE = 0,
-            PROCESS_START_LISTENING = 1,
-            PROCESS_END_LISTENING = 2
-        };
-        
-        int GameStateModule::processConnect(int _request) {
-            
-            connectSocket();
-            
-            if (processSocket > 0) {
-                uint8_t request = _request, response;
-                PERROR_AND_FAIL_IF( send(processSocket, &request, 1, MSG_NOSIGNAL) < 0, "send() error" );
-                PERROR_AND_FAIL_IF( recv(processSocket, &response, 1, MSG_NOSIGNAL) < 0, "recv() error" );
-                
-                printf(":");
-                
-                return response;
-            } else {
-                return -1;
-            }
-        }
-        
-        bool GameStateModule::processHeardWhistle() {
-            int ret = processConnect(PROCESS_HEARD_WHISTLE);
-            if (ret < 0) closeSocket();
-            return (ret == 1);
-        }
-        
-        void GameStateModule::processStartListen() {
-            int ret = processConnect(PROCESS_START_LISTENING);
-            if (ret < 0) closeSocket();
-        }
-        
-        void GameStateModule::processEndListening() {
-            processConnect(PROCESS_END_LISTENING);
-            closeSocket();
-        }
-        
-    }
 }

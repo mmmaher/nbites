@@ -64,6 +64,10 @@ struct SharedData {
     int64_t latestCommandRead;
     
     uint8_t sit;
+
+    char buffer[128];   //prevent c/c++ allowed copy of all structure fields when setting sit
+    uint8_t whistle_heard;
+    uint8_t whistle_listen;
 };
 
 

@@ -1,51 +1,28 @@
 #include <iostream>
 #include <signal.h>
 
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include "Sound.h"
 #include "Transform.h"
 #include "nblogio.h"
 #include "utilities.hpp"
 
-const int VERSION = 3;
+#include "../../share/include/SharedData.h"
 
-const char * WHISTLE_LOG_PATH = "/home/nao/nbites/log/whistle";
-const int WHISTLE_PORT = 30005;
+const int VERSION = 3;
 
 using namespace nblog;
 
 nbsound::Capture * capture = NULL;
 nbsound::Transform * transform = NULL;
 
-nblog::io::server_socket_t server = 0;
-nblog::io::client_socket_t client = 0;
-
-uint8_t whistle_heard = false;
-uint8_t whistle_listening = false;
-
-enum {
-    PROCESS_HEARD_WHISTLE = 0,
-    PROCESS_START_LISTENING = 1,
-    PROCESS_END_LISTENING = 2
-};
-
+int shared_memory_fd = 0;
+SharedData * shared_memory = NULL;
 FILE * logFile;
-
-bool processHeardWhistle() {
-    if (whistle_heard) {
-        whistle_listening = false;
-        return true;
-    } return false;
-}
-
-void processStartListening() {
-    whistle_heard = false;
-    whistle_listening = true;
-}
-
-void processEndListening() {
-    whistle_heard = false;
-    whistle_listening = false;
-}
 
 void whistleExitEnd() {
     fflush(stdout);
@@ -68,6 +45,16 @@ void whistleExit() {
     if (server) {
         NBL_WARN("close(server)...")
         close(server);
+    }
+
+    if (shared_memory) {
+        NBL_WARN("munmap(shared_memory)...")
+        munmap((void *)shared, sizeof(SharedData));
+    }
+
+    if (shared_memory_fd > 0) {
+        NBL_WARN("close(shared_memory_fd)...")
+        close(shared_memory_fd);
     }
 
     whistleExitEnd();
@@ -95,7 +82,9 @@ const double WHISTLE_THRESHOLD = 2000000;
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
 //    printf("callback %ld\n", iteration);
 
-    if (whistle_listening && buffer && transform) {
+    bool listening = (shared_memory && shared_memory->whistle_listen);
+
+    if (listening && buffer && transform) {
         for (int i = 0; i < params->channels; ++i) {
 //            printf("\ttransform %d\n", i);
             transform->transform(buffer, i);
@@ -104,8 +93,9 @@ void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * para
 //            NBL_PRINT("summed=\t%lf\n", summed);
             if (summed > WHISTLE_THRESHOLD) {
                 NBL_WARN("WHISTLE: %lf\n", summed);
-                whistle_heard = true;
-		whistle_listening = false;
+                if (shared_memory) {
+                    shared_memory->whistle_heard = true;
+                }
             }
         }
     }
@@ -123,13 +113,24 @@ int main(int argc, const char ** argv) {
 
     NBL_INFO("whistle::main() log file re-opened...");
 
-    io::ioret ret = nblog::io::server_socket(server, WHISTLE_PORT, 1);
-    if (ret) {
-        NBL_ERROR("could not create server socket!\n");
+    shared_memory_fd = shm_open(NBITES_MEM, O_RDWR, 0600);
+    if (shared_memory_fd < 0) {
+        std::cout << "sensorsModule couldn't open shared fd!" << std::endl;
+        NBL_ERROR("whistle couldn't open shared memory file!");
         whistleExitEnd();
     }
 
-    NBL_WHATIS(server);	
+    shared_memory = (volatile SharedData*) mmap(NULL, sizeof(SharedData),
+                                         PROT_READ | PROT_WRITE,
+                                         MAP_SHARED, shared_memory_fd, 0);
+
+    if (shared_memory == MAP_FAILED) {
+        NBL_ERROR("whistle couldn't map shared memory file!");
+        close(shared_memory_fd);
+        whistleExitEnd();
+    }
+
+    NBL_WHATIS(shared_memory);
 
     nbsound::parameter_t params = {nbsound::NBS_S16_LE, 2, 32768, 48000};
     transform = new nbsound::Transform(params);
@@ -146,42 +147,12 @@ int main(int argc, const char ** argv) {
     capture->start_new_thread(capture_thread, NULL);
 
     while(capture->is_active()) {
-        io::ioret ret = io::poll_accept(server, client);
-        if (ret) {
-            NBL_ERROR("io::poll_accept() got error!");
-            whistleExit();
+        std::string unused;
+        std::getline(std::cin, unused);
+        if (shared_memory) {
+            NBL_WARN("FAKE WHISTLE! (newline on stdin)\n");
+            shared_memory->whistle_heard = true;
         }
-
-        printf("connection\n");
-
-        uint8_t request, response = 0;
-        io::config_socket(client, (io::sock_opt_mask) 0);
-
-        for (;;) {
-            ret = io::recv_exact(client, 1, &request, io::IO_MAX_DELAY() );
-            if (ret) break;
-
-            switch(request) {
-                case PROCESS_HEARD_WHISTLE:
-    //                printf("PROCESS_HEARD_WHISTLE?\n");
-                    response = processHeardWhistle(); break;
-                case PROCESS_START_LISTENING:
-  //                  printf("\tPROCESS_START_LISTENING\n");
-                    processStartListening(); break;
-                case PROCESS_END_LISTENING:
-//                    printf("\tPROCESS_END_LISTENING\n");
-                    processEndListening(); break;
-                default:
-                    NBL_ERROR("whistle.main() UNKNOWN REQUEST ENUMERATION %d", request);
-            }
-      //      if (response) printf("response > 0 \n");
-            ret = io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
-            if (ret) break;
-        }
-        
-        if (client)
-            close(client);
-        client = 0;
     }
 
     whistleExit();

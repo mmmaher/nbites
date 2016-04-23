@@ -5,6 +5,8 @@
 #include "GameState.pb.h"
 #include "GCResponse.pb.h"
 
+#include "SharedData.h"
+
 namespace man{
 namespace gamestate{
 
@@ -55,16 +57,12 @@ private:
     bool keep_time;
     long long start_time;
 
-    void whistleHandler(int last, int&next);
-    bool heard_whistle;
-    int processSocket;
+    int shared_memory_fd;
+    volatile SharedData * shared_memory;
 
-    int connectSocket();
-    void closeSocket();
-    int processConnect(int);
-    bool processHeardWhistle();
-    void processStartListen();
-    void processEndListening();
+    typedef int game_state_t;
+
+    void whistleHandler(game_state_t lastState, game_state_t& nextState);
 };
 
 }

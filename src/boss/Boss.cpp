@@ -266,6 +266,7 @@ int Boss::constructSharedMem()
         std::cout << "Couldn't truncate shared mem" << std::endl;
         return -1;
     }
+
     shared = (volatile SharedData*) mmap(NULL, sizeof(SharedData),
                                          PROT_READ | PROT_WRITE,
                                          MAP_SHARED, shared_fd, 0);
