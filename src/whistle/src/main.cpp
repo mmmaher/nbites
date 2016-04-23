@@ -6,6 +6,8 @@
 #include "nblogio.h"
 #include "utilities.hpp"
 
+const int VERSION = 3;
+
 const char * WHISTLE_LOG_PATH = "/home/nao/nbites/log/whistle";
 const int WHISTLE_PORT = 30005;
 
@@ -88,7 +90,7 @@ double sum(int start, int end) {
     return total;
 }
 
-const double WHISTLE_THRESHOLD = 5000000;
+const double WHISTLE_THRESHOLD = 2000000;
 
 void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * params) {
 //    printf("callback %ld\n", iteration);
@@ -103,6 +105,7 @@ void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * para
             if (summed > WHISTLE_THRESHOLD) {
                 NBL_WARN("WHISTLE: %lf\n", summed);
                 whistle_heard = true;
+		whistle_listening = false;
             }
         }
     }
@@ -111,12 +114,12 @@ void callback(nbsound::Handler * cap, void * buffer, nbsound::parameter_t * para
 }
 
 int main(int argc, const char ** argv) {
-
+	printf("\tversion=%d\n", VERSION);
     signal(SIGINT, handler);
     signal(SIGTERM, handler);
 
     printf("...whistle...\nfreopen()....\n");
-//    freopen(WHISTLE_LOG_PATH, "w", stdout);
+    freopen(WHISTLE_LOG_PATH, "w", stdout);
 
     NBL_INFO("whistle::main() log file re-opened...");
 
@@ -160,18 +163,18 @@ int main(int argc, const char ** argv) {
 
             switch(request) {
                 case PROCESS_HEARD_WHISTLE:
-                    printf("PROCESS_HEARD_WHISTLE?\n");
+    //                printf("PROCESS_HEARD_WHISTLE?\n");
                     response = processHeardWhistle(); break;
                 case PROCESS_START_LISTENING:
-                    printf("\tPROCESS_START_LISTENING\n");
+  //                  printf("\tPROCESS_START_LISTENING\n");
                     processStartListening(); break;
                 case PROCESS_END_LISTENING:
-                    printf("\tPROCESS_END_LISTENING\n");
+//                    printf("\tPROCESS_END_LISTENING\n");
                     processEndListening(); break;
                 default:
                     NBL_ERROR("whistle.main() UNKNOWN REQUEST ENUMERATION %d", request);
             }
-            if (response) printf("response > 0 \n");
+      //      if (response) printf("response > 0 \n");
             ret = io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
             if (ret) break;
         }

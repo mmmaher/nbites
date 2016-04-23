@@ -49,6 +49,7 @@ void error_signal_handler(int signal) {
     fflush(stderr);
 
     printf("error_signal_handler() done.\n");
+    exit(-1);
 }
 
 // Deal with lock file. To ensure that we only have ONE instance of man
