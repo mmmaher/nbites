@@ -43,7 +43,7 @@ namespace man{
         last_kickoff(false),
         response_status(GAMECONTROLLER_RETURN_MSG_ALIVE),
         keep_time(false),
-        start_time(0),
+        start_time(0)
         {
             reset();
 
@@ -259,7 +259,6 @@ namespace man{
                 player->set_penalty(PENALTY_NONE);
             }
 
-            heard_whistle = false;
         }
         void GameStateModule::switchTeam()
         {
@@ -340,4 +339,5 @@ namespace man{
                 } break;
             }
         }
+}
 }

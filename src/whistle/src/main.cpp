@@ -11,9 +11,11 @@
 #include "nblogio.h"
 #include "utilities.hpp"
 
+#define WHISTLE_COMPILE
 #include "../../share/include/SharedData.h"
 
 const int VERSION = 3;
+const char * WHISTLE_LOG_PATH = "/home/nao/nbites/log/whistle";
 
 using namespace nblog;
 
@@ -21,7 +23,7 @@ nbsound::Capture * capture = NULL;
 nbsound::Transform * transform = NULL;
 
 int shared_memory_fd = 0;
-SharedData * shared_memory = NULL;
+volatile SharedData * shared_memory = NULL;
 FILE * logFile;
 
 void whistleExitEnd() {
@@ -37,19 +39,9 @@ void whistleExit() {
         }
     }
 
-    if (client) {
-        NBL_WARN("close(client)...")
-        close(client);
-    }
-
-    if (server) {
-        NBL_WARN("close(server)...")
-        close(server);
-    }
-
     if (shared_memory) {
         NBL_WARN("munmap(shared_memory)...")
-        munmap((void *)shared, sizeof(SharedData));
+        munmap((void *)shared_memory, sizeof(SharedData));
     }
 
     if (shared_memory_fd > 0) {
@@ -147,12 +139,13 @@ int main(int argc, const char ** argv) {
     capture->start_new_thread(capture_thread, NULL);
 
     while(capture->is_active()) {
-        std::string unused;
-        std::getline(std::cin, unused);
-        if (shared_memory) {
-            NBL_WARN("FAKE WHISTLE! (newline on stdin)\n");
-            shared_memory->whistle_heard = true;
-        }
+	  sleep(10);
+//        std::string unused;
+//        std::getline(std::cin, unused);
+//        if (shared_memory) {
+//            NBL_WARN("FAKE WHISTLE! (newline on stdin)\n");
+//            shared_memory->whistle_heard = true;
+//        }
     }
 
     whistleExit();

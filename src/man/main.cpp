@@ -77,11 +77,11 @@ int main() {
 
     signal(SIGSEGV, error_signal_handler);
 
-//    printf("forking for whistle...\n");
-//    whistlePID = fork();
-//    if (whistlePID == 0) {
-//         execl("/home/nao/whistle", "", NULL);
-//    }
+    printf("forking for whistle...\n");
+    whistlePID = fork();
+    if (whistlePID == 0) {
+         execl("/home/nao/whistle", "", NULL);
+    }
 
     printf("\t\tCOMPILED WITH BOSS VERSION == %d\n", BOSS_VERSION);
     
