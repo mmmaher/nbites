@@ -61,6 +61,9 @@ private:
 
     int connectSocket();
     void closeSocket();
+    bool processHeardWhistle();
+    void processStartListen();
+    void processEndListening();
 };
 
 }
