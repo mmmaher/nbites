@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "RoboGrams.h"
 #include "Toggle.pb.h"
@@ -54,6 +54,17 @@ private:
 
     bool keep_time;
     long long start_time;
+
+    void whistleHandler(int last, int&next);
+    bool heard_whistle;
+    int processSocket;
+
+    int connectSocket();
+    void closeSocket();
+    int processConnect(int);
+    bool processHeardWhistle();
+    void processStartListen();
+    void processEndListening();
 };
 
 }
