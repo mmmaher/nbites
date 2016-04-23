@@ -282,6 +282,11 @@ namespace man{
                 return;
             }
 
+	    if (last == STATE_PLAYING && next == STATE_SET && heard_whistle) {
+		next = STATE_PLAYING;
+		closeSocket();
+	    }	
+
             if ( last == STATE_SET && next == STATE_PLAYING ) {
                 processEndListening();
                 heard_whistle = false;
