@@ -7,15 +7,21 @@
 
 #include <sys/file.h>
 #include <errno.h>
+#include <unistd.h>
 
 int lockFD = 0;
 man::Man* instance;
+pid_t whistlePID = 0;
 const char * MAN_LOG_PATH = "/home/nao/nbites/log/manlog";
 
 void handler(int signal)
 {
     if (signal == SIGTERM)
     {
+        if (whistlePID > 0) {
+            kill(whistlePID, SIGTERM);
+        }
+
         // Give man a chance to clean up behind it
         // I.e. close camera driver gracefully
         instance->preClose();
@@ -43,7 +49,6 @@ void error_signal_handler(int signal) {
     fflush(stderr);
 
     printf("error_signal_handler() done.\n");
-
     exit(-1);
 }
 
@@ -71,6 +76,12 @@ int main() {
     establishLock();
 
     signal(SIGSEGV, error_signal_handler);
+
+    printf("forking for whistle...\n");
+    whistlePID = fork();
+    if (whistlePID == 0) {
+         execl("/home/nao/whistle", "", NULL);
+    }
 
     printf("\t\tCOMPILED WITH BOSS VERSION == %d\n", BOSS_VERSION);
     
