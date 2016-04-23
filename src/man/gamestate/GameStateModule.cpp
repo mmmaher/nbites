@@ -334,8 +334,6 @@ if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
             PROCESS_END_LISTENING = 2
         };
         
-        
-        
         int GameStateModule::processConnect(int _request) {
             
             connectSocket();
@@ -349,7 +347,7 @@ if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
                 
                 return response;
             } else {
-                return 0;
+                return -1;
             }
         }
         
