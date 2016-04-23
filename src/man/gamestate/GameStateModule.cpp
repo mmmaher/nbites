@@ -107,7 +107,6 @@ void GameStateModule::update()
     }
     if (commInput.message().have_remote_gc())
     {
-        whistleHandler();
         latest_data = commInput.message();
         if (latest_data.state() != STATE_PLAYING)
         {
@@ -261,12 +260,12 @@ void processEndListening();
 void GameStateModule::whistleHandler(int last, int& next) {
     if (last == STATE_READY
             && next == STATE_SET) {
+        closeSocket();
         processStartListen();            
         heard_whistle = false;
 
         return;
     }
-    
 
     if (last == STATE_SET
         && next == STATE_SET) {
@@ -275,6 +274,8 @@ void GameStateModule::whistleHandler(int last, int& next) {
             printf(":::: WHISTLE OVERRIDE ::::\n");
             next = STATE_PLAYING;
             heard_whistle = true;
+            closeSocket();
+
         } else if (heard_whistle) {
             printf(":::: WHISTLE OVERRIDE ::::\n");
             std::cout << "GameStateModule::whistleHandler() latest_data.state == STATE_SET BUT heard_whistle !!!ERROR!!!" << std::cout;
@@ -284,7 +285,7 @@ void GameStateModule::whistleHandler(int last, int& next) {
         return; 
     }
 
-    if (last == STATE_SET && next == STATE_PLAYING) {
+    if ( last == STATE_SET && next == STATE_PLAYING ) {
         processEndListening();
         heard_whistle = false;
 
@@ -292,56 +293,83 @@ void GameStateModule::whistleHandler(int last, int& next) {
     }
 }
 
+#define PERROR_AND_FAIL_IF( c , str )   \
+if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
+
+    int connectSocket() {
+        if (processSocket > 0)
+            return 0;
+        else {
+            struct sockaddr_in server;
+            bzero(&server, sizeof(server));
+
+            int sock = socket(AF_INET, SOCK_STREAM, 0);
+            PERROR_AND_FAIL_IF(sock <= 0, "could not create client socket!")
+
+            server.sin_family = AF_INET ;
+            server.sin_port = htons(WHISTLE_PORT);
+
+            struct hostent * hent = gethostbyname(WHISTLE_HOST);
+            PERROR_AND_FAIL_IF(!hent, "could not get host ip")
+
+            bcopy(hent->h_addr, &server.sin_addr.s_addr, hent->h_length);
+
+            int ret = connect(sock, (struct sockaddr *) &server, (socklen_t) sizeof(struct sockaddr_in) );
+            
+            PERROR_AND_FAIL_IF(ret, "could not connect client socket!")
+            processSocket = sock;
+            return 0;
+        }
+    }
+
+    void closeSocket() {
+        if (socket > 0) {
+            close (socket);
+            socket = 0;
+        } else {
+            socket = 0;
+        }
+    }
+
 enum {
     PROCESS_HEARD_WHISTLE = 0,
     PROCESS_START_LISTENING = 1,
     PROCESS_END_LISTENING = 2
 };
 
-#define PERROR_AND_FAIL_IF( c , str )   \
-    if (c) { printf("GameStateModule::processConnect(): %s\n\n", str); return -1; }
+
 
 int processConnect(int _request) {
-    struct sockaddr_in server;
-    bzero(&server, sizeof(server));
 
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    PERROR_AND_FAIL_IF(sock <= 0, "could not create client socket!")
+    connectSocket();
 
-    server.sin_family = AF_INET ;
-    server.sin_port = htons(WHISTLE_PORT);
+    if (processSocket > 0) {
+        uint8_t request = _request, response;
+        PERROR_AND_FAIL_IF( send(processSocket, &request, 1, MSG_NOSIGNAL) < 0, "send() error" );
+        PERROR_AND_FAIL_IF( recv(processSocket, &response, 1, MSG_NOSIGNAL) < 0, "recv() error" );
 
-    struct hostent * hent = gethostbyname(WHISTLE_HOST);
-    PERROR_AND_FAIL_IF(!hent, "could not get host ip")
-
-    bcopy(hent->h_addr, &server.sin_addr.s_addr, hent->h_length);
-
-    int ret = connect(sock, (struct sockaddr *) &server, (socklen_t) sizeof(struct sockaddr_in) );
-
-    PERROR_AND_FAIL_IF(ret, "could not connect client socket!")
-
-    printf(".");
-
-    uint8_t request = _request, response;
-    PERROR_AND_FAIL_IF( send(sock, &request, 1, MSG_NOSIGNAL) < 0, "send() error" );
-    PERROR_AND_FAIL_IF( recv(sock, &response, 1, MSG_NOSIGNAL) < 0, "recv() error" );
-
-    printf(":");
-
-    return response;
+        printf(":");
+        
+        return response;
+    } else {
+        return 0;
+    }
 }
 
 bool processHeardWhistle() {
     int ret = processConnect(PROCESS_HEARD_WHISTLE);
+    if (ret < 0) closeSocket();
     return (ret == 1);
 }
 
 void processStartListen() {
-    processConnect(PROCESS_START_LISTENING);
+    int ret = processConnect(PROCESS_START_LISTENING);
+    if (ret < 0) closeSocket();
 }
 
 void processEndListening() {
     processConnect(PROCESS_END_LISTENING);
+    closeSocket();
 }
 
 }

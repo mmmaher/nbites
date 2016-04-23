@@ -57,6 +57,10 @@ private:
 
     void whistleHandler(int last, int&next);
     bool heard_whistle;
+    int processSocket;
+
+    int connectSocket();
+    void closeSocket();
 };
 
 }

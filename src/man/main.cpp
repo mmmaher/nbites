@@ -7,15 +7,21 @@
 
 #include <sys/file.h>
 #include <errno.h>
+#include <unistd.h>
 
 int lockFD = 0;
 man::Man* instance;
+pid_t whistlePID = 0;
 const char * MAN_LOG_PATH = "/home/nao/nbites/log/manlog";
 
 void handler(int signal)
 {
     if (signal == SIGTERM)
     {
+        if (whistlePID > 0) {
+            kill(whistlePID, SIGTERM);
+        }
+
         // Give man a chance to clean up behind it
         // I.e. close camera driver gracefully
         instance->preClose();
@@ -55,6 +61,12 @@ int main() {
     establishLock();
     
     printf("\t\tman 7/%d\n", BOSS_VERSION);
+
+    printf("forking for whistle...\n");
+    whistlePID = fork();
+    if (whistlePID == 0) {
+         execl("/home/nao/whistle", "", NULL);
+    }
     
     //it is somewhat important that we write to the old file descriptors before reopening.
     //this copies some stdout buffer behavior to the new file description.
