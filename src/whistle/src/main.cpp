@@ -155,7 +155,7 @@ int main(int argc, const char ** argv) {
         io::config_socket(client, (io::sock_opt_mask) 0);
 
         for (;;) {
-            io::ioret ret = io::recv_exact(client, 1, &request, io::IO_MAX_DELAY() );
+            ret = io::recv_exact(client, 1, &request, io::IO_MAX_DELAY() );
             if (ret) break;
 
             switch(request) {
@@ -172,7 +172,7 @@ int main(int argc, const char ** argv) {
                     NBL_ERROR("whistle.main() UNKNOWN REQUEST ENUMERATION %d", request);
             }
             if (response) printf("response > 0 \n");
-            io::ioret ret = io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
+            ret = io::send_exact(client, 1, &response, io::IO_MAX_DELAY());
             if (ret) break;
         }
         
